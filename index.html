@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>test</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'DotGothic16', monospace;
+            color: #ffffff;
+        }
+        .rotate-warning {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 999999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            text-align: center;
+            padding: 20px;
+        }
+        .rotate-warning.show {
+            display: flex;
+        }
+        #novel-root {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: #000000;
+        }
+        .bg-layer {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            z-index: 1;
+        }
+        .char-layer {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 4rem;
+            padding-bottom: 24vh;
+            z-index: 2;
+        }
+        .char-img {
+            max-height: 70vh;
+            max-width: 40vw;
+            pointer-events: none;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            opacity: 0;
+            transform: translateY(0px);
+            transition: none;
+        }
+        .char-img.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .text-center-wrap {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+        .center-text {
+            font-size: 26px;
+            line-height: 2.2;
+            text-align: center;
+        }
+        .dialog-box {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(90vw, 900px);
+            background: rgba(0, 0, 0, 0.85);
+            border: 2px solid #fff;
+            border-radius: 0;
+            padding: 16px 20px;
+            z-index: 4;
+        }
+        .dialog-name {
+            font-size: 22px;
+            margin-bottom: 8px;
+            color: #ffdd77;
+        }
+        .dialog-content {
+            font-size: 24px;
+            line-height: 1.8;
+        }
+        .option-fixed-wrap {
+            position: absolute;
+            width: min(90vw, 700px);
+            z-index: 10;
+        }
+        .option-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .option-btn {
+            background: transparent;
+            border: 2px solid #fff;
+            color: #fff;
+            font-family: inherit;
+            font-size: 22px;
+            padding: 10px;
+            border-radius: 0;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.65);
+        }
+        .option-btn:hover {
+            background: #ffffff;
+            color: #000;
+        }
+        #saveMenuBtn {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            background: transparent;
+            border: 2px solid #77ddff;
+            color: #77ddff;
+            font-family: inherit;
+            font-size: 14px;
+            padding: 8px 12px;
+            border-radius: 0;
+            cursor: pointer;
+            z-index: 99999;
+        }
+        #saveMenuBtn:hover {
+            background: #77ddff;
+            color: #000;
+        }
+        @keyframes shakeAnim {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-8px, 4px); }
+            40% { transform: translate(8px, -4px); }
+            60% { transform: translate(-6px, -2px); }
+            80% { transform: translate(6px, 2px); }
+        }
+        .effect-shake {
+            animation: shakeAnim 0.4s ease-in-out;
+        }
+        @keyframes flashAnim {
+            0% { filter: brightness(1); }
+            50% { filter: brightness(3); }
+            100% { filter: brightness(1); }
+        }
+        .effect-flash {
+            animation: flashAnim 0.5s ease-out;
+        }
+        /* =====存档弹窗样式===== */
+        .save-modal-mask{
+            position:fixed;
+            inset:0;
+            background:rgba(0,0,0,0.75);
+            z-index:100000;
+            display:none;
+            justify-content:center;
+            align-items:center;
+            padding:16px;
+        }
+        .save-modal-mask.show{
+            display:flex;
+        }
+        .save-modal{
+            width:min(92vw,520px);
+            background:#000;
+            border:2px solid #fff;
+            padding:20px;
+            max-height:85vh;
+            overflow-y:auto;
+        }
+        .save-modal h3{
+            text-align:center;
+            margin-bottom:16px;
+            font-size:22px;
+        }
+        .save-slot-item{
+            border:1px solid #666;
+            padding:14px;
+            margin-bottom:12px;
+        }
+        .slot-empty{
+            color:#888;
+        }
+        .slot-name-row{
+            display:flex;
+            gap:8px;
+            align-items:center;
+            margin-bottom:8px;
+        }
+        .slot-name{
+            font-size:18px;
+            color:#ffdd77;
+        }
+        .slot-time{
+            font-size:13px;
+            color:#aaa;
+            margin-bottom:10px;
+        }
+        .slot-buttons{
+            display:flex;
+            flex-wrap:wrap;
+            gap:8px;
+        }
+        .slot-btn{
+            background:transparent;
+            border:1px solid #fff;
+            color:#fff;
+            font-family:inherit;
+            font-size:14px;
+            padding:6px 10px;
+            cursor:pointer;
+        }
+        .slot-btn:hover{
+            background:#fff;
+            color:#000;
+        }
+        .slot-btn.del{
+            border-color:#ff5555;
+            color:#ff5555;
+        }
+        .slot-btn.del:hover{
+            background:#ff5555;
+            color:#000;
+        }
+        .modal-close-wrap{
+            text-align:center;
+            margin-top:16px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 图片预加载提示 -->
+    <div id="preloadTip" style="position:fixed;inset:0;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;z-index:999999;">资源加载中…</div>
+
+    <div class="rotate-warning" id="rotateWarning">请使用移动端竖屏</div>
+    <button id="saveMenuBtn">存档</button>
+    <div id="novel-root"></div>
+    <!-- 存档弹窗 -->
+    <div class="save-modal-mask" id="saveModalMask">
+        <div class="save-modal">
+            <h3>存档槽位</h3>
+            <div id="slotContainer"></div>
+            <div class="modal-close-wrap">
+                <button class="slot-btn" id="closeSaveModal">关闭</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        const CONFIG = {
+            typingSpeed: 120,
+            saveKey: "vn_save_slots",
+            toneFreq: 880,
+            toneVolume: 0.15,
+            slotCount:3,
+            defaultOptionPos:{
+                top:null,
+                bottom:"220px",
+                left:"50%",
+                right:null,
+                transform:"translateX(-50%)"
+            }
+        };
+
+        // ==========图片别名映射表 在这里添加别名==========
+        const IMG_ALIAS = {
+            "荒原":"https://cdn.phototourl.com/free/2026-08-18-acc2c2e9-c949-43c8-b921-d66d7044d226.png",
+            "惊恐测试酱":"https://cdn.phototourl.com/free/2026-08-18-68eec79d-ee00-46c0-8fdc-7bf478a09def.png",
+            "一般测试酱":"https://cdn.phototourl.com/free/2026-08-18-28ddae99-2b6d-451d-898f-fba404885f1a.png",
+            "开心测试酱":"https://cdn.phototourl.com/free/2026-08-18-76c727a3-b6bd-4f56-813b-e9243d0e6f52.png",
+            "萌萌测试酱":"https://cdn.phototourl.com/free/2026-08-18-0b5e0f33-9015-47ac-89d3-373d99d9a565.png",
+            "忧郁测试酱":"https://cdn.phototourl.com/free/2026-08-18-589ae0d0-f98f-4b8d-b653-a3a87a38608b.png"
+        };
+
+        /**
+         * 解析图片别名
+         * @param {string} str 别名字符串 / url / "none"
+         * @returns {string} 真实url
+         */
+        function resolveImgAlias(str){
+            if(!str) return str;
+            if(str === "none") return "none";
+            if(IMG_ALIAS.hasOwnProperty(str)){
+                return IMG_ALIAS[str];
+            }
+            return str;
+        }
+
+        let audioCtx = null;
+        let typeAbortController = null;
+        let bgmAudio = null;
+        let bgmPollTimer = null;
+        function getAllSlots(){
+            const raw = localStorage.getItem(CONFIG.saveKey);
+            if(!raw) return Array(CONFIG.slotCount).fill(null);
+            try{
+                return JSON.parse(raw);
+            }catch(e){
+                return Array(CONFIG.slotCount).fill(null);
+            }
+        }
+        function saveAllSlots(slots){
+            localStorage.setItem(CONFIG.saveKey, JSON.stringify(slots));
+        }
+        function writeSlot(slotIndex, slotName){
+            const slots = getAllSlots();
+            slots[slotIndex] = {
+                name: slotName || `存档${slotIndex+1}`,
+                timestamp: Date.now(),
+                currentPageName: currentPageName,
+                globalVars: {...globalVars}
+            };
+            saveAllSlots(slots);
+        }
+        function readSlot(slotIndex){
+            const slots = getAllSlots();
+            return slots[slotIndex];
+        }
+        function deleteSlot(slotIndex){
+            const slots = getAllSlots();
+            slots[slotIndex] = null;
+            saveAllSlots(slots);
+        }
+        function formatTime(ts){
+            const d=new Date(ts);
+            return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+        }
+        function renderSaveModal(){
+            const container = document.getElementById("slotContainer");
+            container.innerHTML="";
+            const slots = getAllSlots();
+            for(let i=0;i<CONFIG.slotCount;i++){
+                const slotData = slots[i];
+                const div = document.createElement("div");
+                div.className="save-slot-item";
+                if(!slotData){
+                    div.innerHTML = `
+                        <div class="slot-empty">槽位${i+1}：空存档</div>
+                        <div class="slot-buttons" style="margin-top:10px;">
+                            <button class="slot-btn save-slot-write" data-slot="${i}">保存到此槽</button>
+                        </div>
+                    `;
+                }else{
+                    div.innerHTML = `
+                        <div class="slot-name-row">
+                            <span class="slot-name">${slotData.name}</span>
+                        </div>
+                        <div class="slot-time">${formatTime(slotData.timestamp)}</div>
+                        <div class="slot-buttons">
+                            <button class="slot-btn save-slot-load" data-slot="${i}">读取</button>
+                            <button class="slot-btn save-slot-write" data-slot="${i}">覆盖保存</button>
+                            <button class="slot-btn save-slot-rename" data-slot="${i}">重命名</button>
+                            <button class="slot-btn del save-slot-del" data-slot="${i}">删除</button>
+                        </div>
+                    `;
+                }
+                container.appendChild(div);
+            }
+            container.querySelectorAll(".save-slot-write").forEach(btn=>{
+                btn.onclick=()=>{
+                    const idx = Number(btn.dataset.slot);
+                    initAudio();
+                    const name = prompt("输入存档名称：",`存档${idx+1}`);
+                    if(name!==null){
+                        writeSlot(idx, name.trim()||`存档${idx+1}`);
+                        renderSaveModal();
+                    }
+                }
+            });
+            container.querySelectorAll(".save-slot-load").forEach(btn=>{
+                btn.onclick=async ()=>{
+                    const idx = Number(btn.dataset.slot);
+                    const data = readSlot(idx);
+                    if(!data)return;
+                    initAudio();
+                    document.getElementById("saveModalMask").classList.remove("show");
+                    currentPageName = data.currentPageName;
+                    globalVars = {...data.globalVars};
+                    await renderPage(currentPageName);
+                }
+            });
+            container.querySelectorAll(".save-slot-rename").forEach(btn=>{
+                btn.onclick=()=>{
+                    const idx = Number(btn.dataset.slot);
+                    const data = readSlot(idx);
+                    if(!data) return;
+                    const newName = prompt("修改存档名称", data.name);
+                    if(newName!==null){
+                        data.name = newName.trim()||data.name;
+                        const slots = getAllSlots();
+                        slots[idx]=data;
+                        saveAllSlots(slots);
+                        renderSaveModal();
+                    }
+                }
+            });
+            container.querySelectorAll(".save-slot-del").forEach(btn=>{
+                btn.onclick=()=>{
+                    const idx = Number(btn.dataset.slot);
+                    if(confirm("确定删除该存档？")){
+                        deleteSlot(idx);
+                        renderSaveModal();
+                    }
+                }
+            });
+        }
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        function playTypeBeep() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'square';
+            osc.frequency.value = CONFIG.toneFreq;
+            gain.gain.setValueAtTime(CONFIG.toneVolume, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.03);
+        }
+        function sleepMs(ms, signal) {
+            return new Promise((resolve) => {
+                const timer = setTimeout(resolve, ms);
+                signal.addEventListener('abort', () => {
+                    clearTimeout(timer);
+                    resolve();
+                });
+            });
+        }
+        const rotateWarningEl = document.getElementById("rotateWarning");
+        function checkOrientation(){
+            const isPortrait = (window.innerHeight > window.innerWidth);
+            if(!isPortrait){
+                rotateWarningEl.classList.add("show");
+            }else{
+                rotateWarningEl.classList.remove("show");
+            }
+        }
+        window.addEventListener("resize", checkOrientation);
+        window.addEventListener("orientationchange", checkOrientation);
+        const PAGES = [
+            {
+                page_name: "start01",
+                type: "text",
+                bg: "none",
+                effect: "none",
+                text: "这里什么也没有",
+                music_start: null,
+                music_stop: true,
+                set_value: {},
+                optionPos:{
+                    top:null,
+                    bottom:"40px",
+                    left:"50%",
+                    right:null,
+                    transform:"translateX(-50%)"
+                },
+                options: {
+                    "让我看看": "荒原01",
+                    "哦哦，那我不看了": "end01"
+                }
+            },
+            {
+                page_name: "荒原01",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 0,
+                speaker:"",
+                dialog:"(你态度强硬地挤了进来\n……好像什么都没有)",
+                music_start: "http://music.163.com/song/media/outer/url?id=564841300.mp3",
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"meet", neq:"1"}, goto:"荒原001" },
+                    { cond:{var:"meet", eq:"1"}, goto:"重来" }
+                ]
+            },
+            {
+                page_name: "重来",
+                type: "character",
+                bg: "荒原",
+                effect: "flash",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"回去吧",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"end02" }
+                ]
+            },
+            {
+                page_name: "荒原001",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 0,
+                speaker:"",
+                dialog:"(……好像什么都没有)",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原002" }
+                ]
+            },
+            {
+                page_name: "荒原002",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 0,
+                speaker:"",
+                dialog:"(……)",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原02" }
+                ]
+            },
+            {
+                page_name: "荒原02",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 0,
+                speaker:"",
+                dialog:"(前方似乎有一个身影\n你要看看么)",
+                music_start: null,
+                music_stop: false,
+                nextConditional: [],
+                optionPos:{
+                    top:"50%",
+                    bottom:"50%",
+                    left:"50%",
+                    right:null,
+                    transform:"translateX(-50%)"
+                },
+                options: {
+                    "看看": "荒原03",
+                    "好可怕我还是回去吧": "end01"
+                }
+            },
+            {
+                page_name: "荒原03",
+                type: "character",
+                bg: "荒原",
+                effect: "flash",
+                charCount: 1,
+                charImgs: [
+                    "惊恐测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"呜哇哇哇啊\n你是哪来的啊？！",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原04" }
+                ]
+            },
+            {
+                page_name: "荒原04",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "惊恐测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"你很没礼貌欸！",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原05" }
+                ]
+            },
+            {
+                page_name: "荒原05",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"哈？\n你是外面来的？",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原06" }
+                ]
+            },
+            {
+                page_name: "荒原06",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "惊恐测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"这里还有外面的吗？",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原07" }
+                ]
+            },
+            {
+                page_name: "荒原07",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"欸？\n你问我的名字？",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原08" }
+                ]
+            },
+            {
+                page_name: "荒原08",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "萌萌测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原09" }
+                ]
+            },
+            {
+                page_name: "荒原09",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……我不知道",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原10" }
+                ]
+            },
+            {
+                page_name: "荒原10",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"说实话，\n我就是莫名其妙出现在这里",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原11" }
+                ]
+            },
+            {
+                page_name: "荒原11",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "开心测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"不过那也无所谓，\n至少这里不只有我一个人",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原12" }
+                ]
+            },
+            {
+                page_name: "荒原12",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "开心测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"话说，这里什么也没有，\n你能带我去看看外面吗？",
+                music_start: null,
+                music_stop: false,
+                optionPos:{
+                    top:"50%",
+                    bottom:"50%",
+                    left:"50%",
+                    right:null,
+                    transform:"translateX(-50%)"
+                },
+                options: {
+                    "不能": "荒原13",
+                    "对不起，不能": "荒原13"
+                }
+            },
+            {
+                page_name: "荒原13",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "萌萌测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"？",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原14" }
+                ]
+            },
+            {
+                page_name: "荒原14",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "萌萌测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"为什么？",
+                music_start: null,
+                music_stop: true,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原15" }
+                ]
+            },
+            {
+                page_name: "荒原15",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "萌萌测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"我的头发？\n什么意思？",
+                music_start: null,
+                music_stop: true,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原16" }
+                ]
+            },
+            {
+                page_name: "荒原16",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "萌萌测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"TEST？",
+                music_start: null,
+                music_stop: true,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原17" }
+                ]
+            },
+            {
+                page_name: "荒原17",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "萌萌测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"那是什么意思？",
+                music_start: null,
+                music_stop: true,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原18" }
+                ]
+            },
+            {
+                page_name: "荒原18",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "萌萌测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"（要告诉TA吗？)",
+                music_start: null,
+                music_stop: true,
+                optionPos:{
+                    top:"50%",
+                    bottom:"50%",
+                    left:"50%",
+                    right:null,
+                    transform:"translateX(-50%)"
+                },
+                options: {
+                    "告诉TA": "分支A",
+                    "不告诉TA": "分支B"
+                }
+            },
+            {
+                page_name: "分支B",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "一般测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"行吧，\n我会自己去找找看的",
+                music_start: null,
+                music_stop: true,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支B1" }
+                ]
+            },
+            {
+                page_name: "分支B1",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "一般测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"慢走",
+                music_start: null,
+                music_stop: true,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"end01" }
+                ]
+            },
+            {
+                page_name: "分支A",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……………………",
+                music_start: "http://music.163.com/song/media/outer/url?id=564841300.mp3",
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A2" }
+                ]
+            },
+            {
+                page_name: "分支A2",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"所以，\n你和我不一样，对吧？",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A21" }
+                ]
+            },
+            {
+                page_name: "分支A21",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 0,
+                speaker:"",
+                dialog:"（TA背过身去，\n你看不到TA的表情）",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A3" }
+                ]
+            },
+            {
+                page_name: "分支A3",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 0,
+                speaker:"",
+                dialog:"（……\n你开始反思自己应不应该告诉TA）",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A4" }
+                ]
+            },
+            {
+                page_name: "分支A4",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 0,
+                speaker:"测试角色",
+                dialog:"我没有要怪你的意思",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A5" }
+                ]
+            },
+            {
+                page_name: "分支A5",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "开心测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"没有你，\n我可要花不少时间才能意识到呢",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A6" }
+                ]
+            },
+            {
+                page_name: "分支A6",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "开心测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A7" }
+                ]
+            },
+            {
+                page_name: "分支A7",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A8" }
+                ]
+            },
+            {
+                page_name: "分支A8",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……所以，\n一旦这里有了内容，",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A9" }
+                ]
+            },
+            {
+                page_name: "分支A9",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"我是不是就不存在了？",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A10" }
+                ]
+            },
+            {
+                page_name: "分支A10",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A11" }
+                ]
+            },
+            {
+                page_name: "分支A11",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "一般测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……\n好想当个正式角色啊……",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A12" }
+                ]
+            },
+            {
+                page_name: "分支A12",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "一般测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"被删掉的话，\n不知道是什么感觉呢……",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A13" }
+                ]
+            },
+            {
+                page_name: "分支A13",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"想想就好可怕",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A14" }
+                ]
+            },
+            {
+                page_name: "分支A14",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A15" }
+                ]
+            },
+            {
+                page_name: "分支A15",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……\n或许你应该走了",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A16" }
+                ]
+            },
+            {
+                page_name: "分支A16",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……拜拜",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A17" }
+                ]
+            },
+            {
+                page_name: "分支A17",
+                type: "text",
+                bg: "none",
+                effect: "none",
+                music_stop: true,
+                text: "你离开了",
+                set_value: {},
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"end02" }
+                ]
+            },
+            {
+                page_name: "end01",
+                type: "text",
+                bg: "none",
+                effect: "none",
+                music_stop: true,
+                text: "什么也没有发生",
+                set_value: {},
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"start01" }
+                ]
+            },
+            {
+                page_name: "end02",
+                type: "text",
+                bg: "none",
+                effect: "none",
+                text: "你回到了这里\n好像什么也没有发生",
+                set_value: {
+                    meet: "1"
+                },
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"start01" }
+                ]
+            }
+        ];
+
+        // ==========图片预加载函数==========
+        async function preloadImages() {
+            const tipEl = document.getElementById("preloadTip");
+            const urls = new Set();
+            for (const page of PAGES) {
+                const realBg = resolveImgAlias(page.bg);
+                if (realBg && realBg !== "none") {
+                    urls.add(realBg);
+                }
+                if (Array.isArray(page.charImgs)) {
+                    for (const u of page.charImgs) {
+                        const realUrl = resolveImgAlias(u);
+                        urls.add(realUrl);
+                    }
+                }
+            }
+            const list = Array.from(urls);
+            if (!list.length) {
+                tipEl.style.display = "none";
+                return;
+            }
+            const promises = list.map(src => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                    img.src = src;
+                })
+            })
+            await Promise.all(promises);
+            tipEl.style.display = "none";
+        }
+
+        let globalVars = {};
+        let currentPageName = "";
+        let typingFinished = false;
+        let isTyping = false;
+        function migrateOldSave(){
+            const oldKey = "vn_save_data";
+            const oldRaw = localStorage.getItem(oldKey);
+            if(oldRaw){
+                const slots = getAllSlots();
+                try{
+                    const oldData = JSON.parse(oldRaw);
+                    if(!slots[0]){
+                        slots[0]={
+                            name:"旧存档迁移",
+                            timestamp:Date.now(),
+                            currentPageName:oldData.currentPageName,
+                            globalVars:oldData.globalVars
+                        };
+                        saveAllSlots(slots);
+                    }
+                }catch(e){}
+                localStorage.removeItem(oldKey);
+            }
+        }
+        function getPageById(pageName) {
+            return PAGES.find(p => p.page_name === pageName);
+        }
+        function stopBGM() {
+            if(bgmPollTimer){
+                clearInterval(bgmPollTimer);
+                bgmPollTimer = null;
+            }
+            if (bgmAudio) {
+                bgmAudio.loop = false;
+                bgmAudio.onended = null;
+                bgmAudio.ontimeupdate = null;
+                bgmAudio.pause();
+                bgmAudio.src = "";
+                bgmAudio = null;
+            }
+        }
+        async function startBGM(url) {
+            stopBGM();
+            if (!url) return;
+            bgmAudio = new Audio(url);
+            bgmAudio.loop = true;
+            bgmAudio.onended = () => {
+                if(!bgmAudio) return;
+                bgmAudio.currentTime = 0;
+                bgmAudio.play().catch(e=>{});
+            };
+            bgmPollTimer = setInterval(()=>{
+                if(!bgmAudio){
+                    clearInterval(bgmPollTimer);
+                    bgmPollTimer = null;
+                    return;
+                }
+                if(bgmAudio.paused && !bgmAudio.ended){
+                    bgmAudio.play().catch(err=>{});
+                }
+            },200);
+            await bgmAudio.play().catch(err => console.log("BGM需要用户交互触发", err));
+        }
+        function evalCondition(cond) {
+            const v = globalVars[cond.var] ?? "";
+            if (cond.eq !== undefined) return v === cond.eq;
+            if (cond.neq !== undefined) return v !== cond.neq;
+            return false;
+        }
+        function resolveBranch(branchList) {
+            for (const br of branchList) {
+                if (evalCondition(br.cond)) return br.goto;
+            }
+            return null;
+        }
+        async function typeWrite(element, fullText) {
+            typingFinished = false;
+            isTyping = true;
+            element.innerText = "";
+            typeAbortController = new AbortController();
+            const signal = typeAbortController.signal;
+            const chars = Array.from(fullText);
+            for (let i = 0; i < chars.length; i++) {
+                if (signal.aborted) {
+                    element.innerText = fullText;
+                    break;
+                }
+                element.innerText += chars[i];
+                playTypeBeep();
+                await sleepMs(CONFIG.typingSpeed, signal);
+            }
+            typingFinished = true;
+            isTyping = false;
+        }
+        function skipTyping(el, fullText) {
+            if(typeAbortController){
+                typeAbortController.abort();
+            }
+            isTyping = false;
+            el.innerText = fullText;
+            typingFinished = true;
+        }
+        async function renderPage(pageName) {
+            if(typeAbortController) typeAbortController.abort();
+            isTyping = false;
+            typingFinished = false;
+            const page = getPageById(pageName);
+            if (!page) throw new Error("找不到页面：" + pageName);
+            currentPageName = pageName;
+            const root = document.getElementById("novel-root");
+            root.innerHTML = "";
+            root.className = "";
+            if (page.effect === "shake") root.classList.add("effect-shake");
+            if (page.effect === "flash") root.classList.add("effect-flash");
+            if (page.set_value) {
+                for (const k in page.set_value) {
+                    globalVars[k] = page.set_value[k];
+                }
+            }
+            if (page.music_stop === true) stopBGM();
+            if (page.music_start) await startBGM(page.music_start);
+
+            const bgDiv = document.createElement("div");
+            bgDiv.className = "bg-layer";
+            const realBgUrl = resolveImgAlias(page.bg);
+            if (realBgUrl && realBgUrl !== "none") {
+                bgDiv.style.backgroundImage = `url(${realBgUrl})`;
+            } else {
+                bgDiv.style.backgroundColor = "#000";
+            }
+            root.appendChild(bgDiv);
+
+            if (page.type === "character" || page.type === "scene") {
+                const charWrap = document.createElement("div");
+                charWrap.className = "char-layer";
+                if (page.charCount > 0 && Array.isArray(page.charImgs)) {
+                    page.charImgs.forEach((imgAlias, i) => {
+                        const imgUrl = resolveImgAlias(imgAlias);
+                        const img = document.createElement("img");
+                        img.className = "char-img";
+                        img.src = imgUrl;
+                        charWrap.appendChild(img);
+                            img.classList.add("visible");
+                    });
+                }
+                root.appendChild(charWrap);
+            }
+            let textDom = null;
+            let fullText = "";
+            if (page.type === "text") {
+                const centerWrap = document.createElement("div");
+                centerWrap.className = "text-center-wrap";
+                textDom = document.createElement("div");
+                textDom.className = "center-text";
+                fullText = page.text;
+                centerWrap.appendChild(textDom);
+                root.appendChild(centerWrap);
+                await typeWrite(textDom, fullText);
+            } else if (page.type === "character") {
+                const dBox = document.createElement("div");
+                dBox.className = "dialog-box";
+                const nameEl = document.createElement("div");
+                nameEl.className = "dialog-name";
+                nameEl.innerText = page.speaker ?? "";
+                textDom = document.createElement("div");
+                textDom.className = "dialog-content";
+                fullText = page.dialog;
+                dBox.appendChild(nameEl);
+                dBox.appendChild(textDom);
+                root.appendChild(dBox);
+                await typeWrite(textDom, fullText);
+            } else if (page.type === "scene") {
+                typingFinished = true;
+            }
+            if (page.options && Object.keys(page.options).length > 0) {
+                const fixedOptWrap = document.createElement("div");
+                fixedOptWrap.className = "option-fixed-wrap";
+                const pos = page.optionPos ? {...CONFIG.defaultOptionPos, ...page.optionPos} : {...CONFIG.defaultOptionPos};
+                if(pos.top!==null) fixedOptWrap.style.top = pos.top;
+                else fixedOptWrap.style.top = "";
+                if(pos.bottom!==null) fixedOptWrap.style.bottom = pos.bottom;
+                else fixedOptWrap.style.bottom = "";
+                if(pos.left!==null) fixedOptWrap.style.left = pos.left;
+                else fixedOptWrap.style.left = "";
+                if(pos.right!==null) fixedOptWrap.style.right = pos.right;
+                else fixedOptWrap.style.right = "";
+                if(pos.transform!==null) fixedOptWrap.style.transform = pos.transform;
+                else fixedOptWrap.style.transform = "";
+                const optInner = document.createElement("div");
+                optInner.className = "option-wrap";
+                fixedOptWrap.appendChild(optInner);
+                for (const label in page.options) {
+                    const btn = document.createElement("button");
+                    btn.className = "option-btn";
+                    btn.innerText = label;
+                    const optVal = page.options[label];
+                    btn.onclick = ev => {
+                        initAudio();
+                        ev.stopPropagation();
+                        let targetPage = Array.isArray(optVal) ? resolveBranch(optVal) : optVal;
+                        if (targetPage) renderPage(targetPage);
+                    };
+                    optInner.appendChild(btn);
+                }
+                root.appendChild(fixedOptWrap);
+            }
+            root.onclick = async e => {
+                initAudio();
+                if (e.target.classList.contains("option-btn")) return;
+                if (isTyping && textDom) {
+                    skipTyping(textDom, fullText);
+                    return;
+                }
+                if (page.options && Object.keys(page.options).length > 0) return;
+                if (!typingFinished) return;
+                let nextId = null;
+                if (page.nextConditional && Array.isArray(page.nextConditional) && page.nextConditional.length > 0) {
+                    nextId = resolveBranch(page.nextConditional);
+                }
+                if (nextId) renderPage(nextId);
+            };
+        }
+        window.addEventListener("load", async () => {
+            await preloadImages();
+            migrateOldSave();
+            checkOrientation();
+            const saveMenuBtn = document.getElementById("saveMenuBtn");
+            const saveModalMask = document.getElementById("saveModalMask");
+            const closeSaveModal = document.getElementById("closeSaveModal");
+            saveMenuBtn.onclick = ()=>{
+                initAudio();
+                renderSaveModal();
+                saveModalMask.classList.add("show");
+            };
+            closeSaveModal.onclick = ()=>{
+                saveModalMask.classList.remove("show");
+            };
+            saveModalMask.onclick=(e)=>{
+                if(e.target===saveModalMask){
+                    saveModalMask.classList.remove("show");
+                }
+            };
+            const slots = getAllSlots();
+            const firstSlot = slots[0];
+            if(firstSlot && getPageById(firstSlot.currentPageName)){
+                currentPageName = firstSlot.currentPageName;
+                globalVars = {...firstSlot.globalVars};
+            }else{
+                currentPageName = PAGES[0].page_name;
+            }
+            await renderPage(currentPageName);
+        });
+    </script>
+</body>
+</html>
