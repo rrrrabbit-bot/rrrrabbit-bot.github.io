@@ -371,10 +371,26 @@
             background:#fff;
             color:#000;
         }
+        /* 全局加载遮罩 */
+        #preloadTip {
+            position:fixed;
+            inset:0;
+            background:#000;
+            color:#fff;
+            display:flex;
+            flex-direction:column;
+            gap:12px;
+            align-items:center;
+            justify-content:center;
+            z-index:999999;
+        }
+        #preloadTip.hidden{
+            display:none;
+        }
     </style>
 </head>
 <body>
-    <div id="preloadTip" style="position:fixed;inset:0;background:#000;color:#fff;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;z-index:999999;">
+    <div id="preloadTip" class="hidden">
         <div id="preloadText">资源加载中…</div>
         <div id="preloadProgress"></div>
     </div>
@@ -933,6 +949,9 @@ async function preloadImages() {
     const tipEl = document.getElementById("preloadTip");
     const textEl = document.getElementById("preloadText");
     const progressEl = document.getElementById("preloadProgress");
+    tipEl.classList.remove("hidden");
+    textEl.innerText = `资源加载中`;
+    progressEl.innerText = ``;
     const urls = new Set();
     for (const page of PAGES) {
         const realBg = resolveImgAlias(page.bg);
@@ -952,12 +971,12 @@ async function preloadImages() {
     if (!list.length) {
         textEl.innerText = "资源加载完成";
         await sleepMs(300, new AbortController().signal);
-        tipEl.style.display = "none";
+        tipEl.classList.add("hidden");
         return;
     }
     let loadedCount = 0;
     let failCount = 0;
-    textEl.innerText = `资源加载中 0/${list.length}`;
+    textEl.innerText = `资源加载 0/${list.length}`;
     const loadOne = (src) => {
         return new Promise((resolve) => {
             let timer = null;
@@ -987,7 +1006,7 @@ async function preloadImages() {
         textEl.innerText = "全部资源加载完成";
     }
     await sleepMs(400, new AbortController().signal);
-    tipEl.style.display = "none";
+    tipEl.classList.add("hidden");
 }
 
 // === Unit启动逻辑 ===
@@ -997,73 +1016,86 @@ const novelRoot = document.getElementById("novel-root");
 const saveMenuBtn = document.getElementById("saveMenuBtn");
 const saveModalMask = document.getElementById("saveModalMask");
 const closeSaveModal = document.getElementById("closeSaveModal");
+const preloadTip = document.getElementById("preloadTip");
 
 /**
  * 读取某个unit: /units/{unitFolderName}/story.json
  */
 async function loadUnit(unitFolderName){
-    currentUnitId = unitFolderName;
-    const resp = await fetch(`./units/${unitFolderName}/story.json`);
-    if(!resp.ok){
-        alert(`读取剧本失败：units/${unitFolderName}/story.json`);
-        return;
+    try{
+        preloadTip.classList.remove("hidden");
+        document.getElementById("preloadText").innerText = `正在读取剧本：${unitFolderName}`;
+        currentUnitId = unitFolderName;
+        const resp = await fetch(`./units/${unitFolderName}/story.json`);
+        if(!resp.ok){
+            throw new Error(`无法读取文件，HTTP状态:${resp.status}，检查路径 units/${unitFolderName}/story.json`);
+        }
+        const data = await resp.json();
+        IMG_ALIAS = data.IMG_ALIAS ?? {};
+        IMG_FALLBACK = data.IMG_FALLBACK ?? "";
+        PAGES = data.PAGES;
+        if(!Array.isArray(PAGES) || PAGES.length===0){
+            throw new Error("story.json中PAGES为空或格式错误");
+        }
+        // 切换界面：隐藏选择器，显示游戏
+        unitLauncher.style.display = "none";
+        novelRoot.style.display = "block";
+        saveMenuBtn.style.display = "block";
+
+        checkOrientation();
+        preloadedImageMap.clear();
+        await preloadImages();
+
+        // 读取该unit存档
+        const slots = getAllSlots();
+        const firstSlot = slots[0];
+        if(firstSlot && getPageById(firstSlot.currentPageName)){
+            currentPageName = firstSlot.currentPageName;
+            globalVars = {...firstSlot.globalVars};
+            currentPageLineIndex = firstSlot.pageLineIndex ?? 0;
+        }else{
+            currentPageName = PAGES[0].page_name;
+            currentPageLineIndex = 0;
+            globalVars = {};
+        }
+        await renderPage(currentPageName, currentPageLineIndex);
+    }catch(err){
+        preloadTip.classList.add("hidden");
+        alert(`剧本加载失败：\n${err.message}\n\n请确认：\n1. 使用Live Server打开网页\n2. units/unit‑manifest.json配置正确\n3. 剧本文件夹内story.json存在且JSON格式合法`);
+        console.error(err);
     }
-    const data = await resp.json();
-    IMG_ALIAS = data.IMG_ALIAS ?? {};
-    IMG_FALLBACK = data.IMG_FALLBACK ?? "";
-    PAGES = data.PAGES;
-
-    // 切换界面：隐藏选择器，显示游戏
-    unitLauncher.style.display = "none";
-    novelRoot.style.display = "block";
-    saveMenuBtn.style.display = "block";
-
-    checkOrientation();
-    preloadedImageMap.clear();
-    await preloadImages();
-
-    // 读取该unit存档
-    const slots = getAllSlots();
-    const firstSlot = slots[0];
-    if(firstSlot && getPageById(firstSlot.currentPageName)){
-        currentPageName = firstSlot.currentPageName;
-        globalVars = {...firstSlot.globalVars};
-        currentPageLineIndex = firstSlot.pageLineIndex ?? 0;
-    }else{
-        currentPageName = PAGES[0].page_name;
-        currentPageLineIndex = 0;
-        globalVars = {};
-    }
-    await renderPage(currentPageName, currentPageLineIndex);
 }
 
-// 浏览器没有API扫描本地文件夹，这里提供【手动维护unit列表】简易方案
-// 注意：浏览器JS不能直接读磁盘文件夹列表！！！安全限制，无法写自动扫描目录
-// 解决方案1：后端接口返回units下文件夹；解决方案2：写一个unit-manifest.json清单文件
-// 下面采用【清单文件方案】：units目录下放unit-manifest.json，里面写所有子文件夹名字
+// 事件委托处理剧本列表按钮（修复动态onclick绑定失效）
+unitListWrap.addEventListener("click", async (e)=>{
+    const btn = e.target.closest(".unit-item-btn");
+    if(!btn) return;
+    initAudio();
+    const unitName = btn.dataset.unit;
+    await loadUnit(unitName);
+});
+
+// 读取清单，渲染剧本按钮
 async function bootLauncher(){
     try{
         const manifestResp = await fetch("./units/unit-manifest.json");
-        if(!manifestResp.ok) throw new Error("no manifest");
+        if(!manifestResp.ok) throw new Error("读取unit‑manifest.json失败");
         const manifest = await manifestResp.json();
         const unitNames = manifest.units || [];
         unitListWrap.innerHTML = "";
         if(unitNames.length === 0){
-            unitListWrap.innerHTML = `<div style="color:#aaa">未探测到剧本单元，请检查 units/unit-manifest.json</div>`;
+            unitListWrap.innerHTML = `<div style="color:#aaa">未探测到剧本单元，请检查 units/unit‑manifest.json</div>`;
             return;
         }
         for(const name of unitNames){
             const btn = document.createElement("button");
             btn.className = "unit-item-btn";
             btn.innerText = name;
-            btn.onclick = async ()=>{
-                initAudio();
-                await loadUnit(name);
-            };
+            btn.dataset.unit = name;
             unitListWrap.appendChild(btn);
         }
     }catch(err){
-        unitListWrap.innerHTML = `<div style="color:#ff8888">无法读取 units/unit-manifest.json<br>请使用Live Server运行，不要直接打开本地html</div>`;
+        unitListWrap.innerHTML = `<div style="color:#ff88888">无法读取 units/unit‑manifest.json<br>请使用Live Server运行，禁止直接双击打开本地html<br>错误信息:${err.message}</div>`;
         console.error(err);
     }
 
@@ -1083,7 +1115,6 @@ async function bootLauncher(){
 }
 
 window.addEventListener("load", async () => {
-    document.getElementById("preloadTip").style.display="none";
     await bootLauncher();
 });
 </script>
