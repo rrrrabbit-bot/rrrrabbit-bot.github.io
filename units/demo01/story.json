@@ -1,0 +1,709 @@
+{
+  "IMG_ALIAS": {
+    "荒原":"https://cdn.phototourl.com/free/2026-08-18-acc2c2e9-c949-43c8-b921-d66d7044d226.png",
+    "惊恐测试酱":"https://cdn.phototourl.com/free/2026-08-18-68eec79d-ee00-46c0-8fdc-7bf478a09def.png",
+    "一般测试酱":"https://cdn.phototourl.com/free/2026-08-18-28ddae99-2b6d-451d-898f-fba404885f1a.png",
+    "开心测试酱":"https://cdn.phototourl.com/free/2026-08-18-76c727a3-b6bd-4f56-813b-e9243d0e6f52.png",
+    "萌萌测试酱":"https://cdn.phototourl.com/free/2026-08-18-0b5e0f33-9015-47ac-89d3-373d99d9a565.png",
+    "忧郁测试酱":"https://cdn.phototourl.com/free/2026-08-18-589ae0d0-f98f-4b8d-b653-a3a87a38608b.png"
+  },
+  "IMG_FALLBACK": "",
+  "PAGES": [
+            {
+                page_name: "start01",
+                type: "text",
+                bg: "none",
+                effect: "none",
+                text: "这里什么也没有",
+                music_start: null,
+                music_stop: true,
+                set_value: {},
+                optionPos:{
+                    top:null,
+                    bottom:"40px",
+                    left:"50%",
+                    right:null,
+                    transform:"translateX(-50%)"
+                },
+                options: {
+                    "让我看看": "荒原01",
+                    "哦哦，那我不看了": "end01"
+                }
+            },
+            {
+                page_name: "荒原01",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 0,
+                speaker:"",
+                dialog:"(你态度强硬地挤了进来\n……好像什么都没有)",
+                music_start: "http://music.163.com/song/media/outer/url?id=564841300.mp3",
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"meet", neq:"1"}, goto:"荒原001" },
+                    { cond:{var:"meet", eq:"1"}, goto:"重来" }
+                ]
+            },
+            {
+                page_name: "重来",
+                type: "character",
+                bg: "荒原",
+                effect: "flash",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"回去吧",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"end02" }
+                ]
+            },
+            {
+                page_name: "荒原001",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 0,
+                speaker:"",
+                dialog:"(……好像什么都没有)",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原002" }
+                ]
+            },
+            {
+                page_name: "荒原002",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 0,
+                speaker:"",
+                dialog:"(……)",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原02" }
+                ]
+            },
+            {
+                page_name: "荒原02",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 0,
+                speaker:"",
+                dialog:"(前方似乎有一个身影\n你要看看么)",
+                music_start: null,
+                music_stop: false,
+                nextConditional: [],
+                optionPos:{
+                    top:"50%",
+                    bottom:"50%",
+                    left:"50%",
+                    right:null,
+                    transform:"translateX(-50%)"
+                },
+                options: {
+                    "看看": "荒原03",
+                    "好可怕我还是回去吧": "end01"
+                }
+            },
+            // ============示例：单页面多条台词lines数组写法============
+            {
+                page_name: "荒原03",
+                type: "character",
+                bg: "荒原",
+                effect: "flash",
+                charCount: 1,
+                charImgs: [ "惊恐测试酱" ],
+                music_start: null,
+                music_stop: false,
+                lines:[
+                    { speaker:"测试角色", dialog:"呜哇哇哇啊\n你是哪来的啊？！", charImgs:["惊恐测试酱"] },
+                    { speaker:"测试角色", dialog:"你很没礼貌欸！", charImgs:["惊恐测试酱"] },
+                    { speaker:"测试角色", dialog:"哈？\n你是外面来的？", charImgs:["忧郁测试酱"] },
+                    { speaker:"测试角色", dialog:"这里还有外面的吗？", charImgs:["惊恐测试酱"] }
+                ],
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原07" }
+                ]
+            },
+            {
+                page_name: "荒原07",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"欸？\n你问我的名字？",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原08" }
+                ]
+            },
+            {
+                page_name: "荒原08",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "萌萌测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原09" }
+                ]
+            },
+            {
+                page_name: "荒原09",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……我不知道",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原10" }
+                ]
+            },
+            {
+                page_name: "荒原10",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"说实话，\n我就是莫名其妙出现在这里",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原11" }
+                ]
+            },
+            {
+                page_name: "荒原11",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "开心测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"不过那也无所谓，\n至少这里不只有我一个人",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原12" }
+                ]
+            },
+            {
+                page_name: "荒原12",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "开心测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"话说，这里什么也没有，\n你能带我去看看外面吗？",
+                music_start: null,
+                music_stop: false,
+                optionPos:{
+                    top:"50%",
+                    bottom:"50%",
+                    left:"50%",
+                    right:null,
+                    transform:"translateX(-50%)"
+                },
+                options: {
+                    "不能": "荒原13",
+                    "对不起，不能": "荒原13"
+                }
+            },
+            {
+                page_name: "荒原13",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "萌萌测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"？",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原14" }
+                ]
+            },
+            {
+                page_name: "荒原14",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "萌萌测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"为什么？",
+                music_start: null,
+                music_stop: true,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原15" }
+                ]
+            },
+            {
+                page_name: "荒原15",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "萌萌测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"我的头发？\n什么意思？",
+                music_start: null,
+                music_stop: true,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原16" }
+                ]
+            },
+            {
+                page_name: "荒原16",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "萌萌测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"TEST？",
+                music_start: null,
+                music_stop: true,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原17" }
+                ]
+            },
+            {
+                page_name: "荒原17",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "萌萌测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"那是什么意思？",
+                music_start: null,
+                music_stop: true,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"荒原18" }
+                ]
+            },
+            {
+                page_name: "荒原18",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "萌萌测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"（要告诉TA吗？)",
+                music_start: null,
+                music_stop: true,
+                optionPos:{
+                    top:"50%",
+                    bottom:"50%",
+                    left:"50%",
+                    right:null,
+                    transform:"translateX(-50%)"
+                },
+                options: {
+                    "告诉TA": "分支A",
+                    "不告诉TA": "分支B"
+                }
+            },
+            {
+                page_name: "分支B",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "一般测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"行吧，\n我会自己去找找看的",
+                music_start: null,
+                music_stop: true,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支B1" }
+                ]
+            },
+            {
+                page_name: "分支B1",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "一般测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"慢走",
+                music_start: null,
+                music_stop: true,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"end01" }
+                ]
+            },
+            {
+                page_name: "分支A",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……………………",
+                music_start: "http://music.163.com/song/media/outer/url?id=564841300.mp3",
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A2" }
+                ]
+            },
+            {
+                page_name: "分支A2",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"所以，\n你和我不一样，对吧？",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A21" }
+                ]
+            },
+            {
+                page_name: "分支A21",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 0,
+                speaker:"",
+                dialog:"（TA背过身去，\n你看不到TA的表情）",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A3" }
+                ]
+            },
+            {
+                page_name: "分支A3",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 0,
+                speaker:"",
+                dialog:"（……\n你开始反思自己应不应该告诉TA）",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A4" }
+                ]
+            },
+            {
+                page_name: "分支A4",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 0,
+                speaker:"测试角色",
+                dialog:"我没有要怪你的意思",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A5" }
+                ]
+            },
+            {
+                page_name: "分支A5",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "开心测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"没有你，\n我可要花不少时间才能意识到呢",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A6" }
+                ]
+            },
+            {
+                page_name: "分支A6",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "开心测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A7" }
+                ]
+            },
+            {
+                page_name: "分支A7",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A8" }
+                ]
+            },
+            {
+                page_name: "分支A8",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……所以，\n一旦这里有了内容，",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A9" }
+                ]
+            },
+            {
+                page_name: "分支A9",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"我是不是就不存在了？",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A10" }
+                ]
+            },
+            {
+                page_name: "分支A10",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A11" }
+                ]
+            },
+            {
+                page_name: "分支A11",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "一般测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……\n好想当个正式角色啊……",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A12" }
+                ]
+            },
+            {
+                page_name: "分支A12",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "一般测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"被删掉的话，\n不知道是什么感觉呢……",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A13" }
+                ]
+            },
+            {
+                page_name: "分支A13",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"想想就好可怕",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A14" }
+                ]
+            },
+            {
+                page_name: "分支A14",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A15" }
+                ]
+            },
+            {
+                page_name: "分支A15",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……\n或许你应该走了",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A16" }
+                ]
+            },
+            {
+                page_name: "分支A16",
+                type: "character",
+                bg: "荒原",
+                effect: "none",
+                charCount: 1,
+                charImgs: [
+                    "忧郁测试酱"
+                ],
+                speaker:"测试角色",
+                dialog:"……拜拜",
+                music_start: null,
+                music_stop: false,
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"分支A17" }
+                ]
+            },
+            {
+                page_name: "分支A17",
+                type: "text",
+                bg: "none",
+                effect: "none",
+                music_stop: true,
+                text: "你离开了",
+                set_value: {},
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"end02" }
+                ]
+            },
+            {
+                page_name: "end01",
+                type: "text",
+                bg: "none",
+                effect: "none",
+                music_stop: true,
+                text: "什么也没有发生",
+                set_value: {},
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"start01" }
+                ]
+            },
+            {
+                page_name: "end02",
+                type: "text",
+                bg: "none",
+                effect: "none",
+                text: "你回到了这里\n好像什么也没有发生",
+                set_value: {
+                    meet: "1"
+                },
+                nextConditional:[
+                    { cond:{var:"dummy", neq:"nothing"}, goto:"start01" }
+                ]
+            }
+    // 把你剩下全部PAGES内容粘贴到此
+  ]
+}
