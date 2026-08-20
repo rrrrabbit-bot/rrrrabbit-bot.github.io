@@ -4,12 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Visual Novel Loader</title>
+    <!-- 预加载对话框UI边框贴图，页面启动就下载，解决对话框刚打开没有边框 -->
+    <link rel="preload" href="./ui/border_32.png" as="image">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         html,body{width:100vw;height:100vh;overflow:hidden;font-family:monospace;color:#fff;background:#000}
-        @font-face{font-family:"big";src:url("./fonts/minecraft.ttf") format("truetype");font-weight:normal;font-style:normal}
-        @font-face{font-family:"middle";src:url("./fonts/HYPixel11pxU-2.woff2") format("woff2");font-weight:normal;font-style:normal}
-        @font-face{font-family:"small";src:url("./fonts/HYPixel9pxU-2.ttf") format("truetype");font-weight:normal;font-style:normal}
+        /* font‑display:swap：字体没下载完立刻显示后备字体，加载完成再替换，杜绝文字空白FOIT */
+        @font-face{font-family:"big";src:url("./fonts/minecraft.ttf") format("truetype");font-weight:normal;font-style:normal;font-display:swap}
+        @font-face{font-family:"middle";src:url("./fonts/HYPixel11pxU-2.ttf") format("truetype");font-weight:normal;font-style:normal;font-display:swap}
+        @font-face{font-family:"small";src:url("./fonts/HYPixel9pxU-2.ttf") format("truetype");font-weight:normal;font-style:normal;font-display:swap}
         .rotate-warning{position:fixed;inset:0;background:#000;z-index:999999;display:none;justify-content:center;align-items:center;font-size:24px;text-align:center;padding:20px}
         .rotate-warning.show{display:flex}
         .page-transition-fade{position:absolute;inset:0;background:#000;z-index:998;pointer-events:none;opacity:0;transition:opacity 0.35s ease-in-out}
@@ -531,6 +534,8 @@ async function preloadImages(){
     textEl.innerText=`资源加载中`;
     progressEl.innerText=``;
     const urls=new Set();
+    // 强制加入UI边框贴图，保证UI资源也被预加载缓存
+    urls.add("./ui/border_32.png");
     for(const page of PAGES){
         const realBg=resolveImgAlias(page.bg);
         if(realBg&&realBg!=="none")urls.add(realBg);
