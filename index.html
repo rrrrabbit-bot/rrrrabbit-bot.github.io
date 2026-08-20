@@ -4,448 +4,69 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Visual Novel Loader</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        html, body {
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-            font-family: 'DotGothic16', monospace;
-            color: #ffffff;
-            background:#000;
-        }
-        @font-face {
-            font-family: "big"; /* 这个名字自己随便起，后面要用 */
-            src: url("./fonts/minecraft.ttf") format("truetype");
-            font-weight: normal;
-            font-style: normal;
-        }
-        @font-face {
-            font-family: "middle"; /* 这个名字自己随便起，后面要用 */
-            src: url("./fonts/HYPixel11pxU-2.woff2") format("woff2");
-            font-weight: normal;
-            font-style: normal;
-        }
-        @font-face {
-            font-family: "small"; /* 这个名字自己随便起，后面要用 */
-            src: url("./fonts/HYPixel9pxU-2.ttf") format("truetype");
-            font-weight: normal;
-            font-style: normal;
-        }
-        .rotate-warning {
-            position: fixed;
-            inset: 0;
-            background: #000;
-            z-index: 999999;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px;
-            text-align: center;
-            padding: 20px;
-        }
-        .rotate-warning.show {
-            display: flex;
-        }
-        /* === 黑场转场遮罩 === */
-        .page-transition-fade{
-            position:absolute;
-            inset:0;
-            background:#000;
-            z-index:998;
-            pointer-events:none;
-            opacity:0;
-            transition:opacity 0.35s ease-in-out;
-        }
-        .page-transition-fade.in{
-            opacity:1;
-        }
-        /* === Unit选择启动界面 === */
-        #unit-launcher{
-            position:fixed;
-            inset:0;
-            z-index:999;
-            background:#000;
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            justify-content:center;
-            padding:2rem;
-        }
-        #unit-launcher h2{
-            font-size:32px;
-            margin-bottom:2rem;
-        }
-        .unit-list{
-            display:flex;
-            flex-direction:column;
-            gap:14px;
-            width:min(90vw,500px);
-        }
-        .unit-item-btn{
-            width:100%;
-            background:transparent;
-            /* 贴图边框配置，如无图片自动回退纯色边框 */
-            border:2px solid #fff;
-            border-image: url('') 2 stretch;
-            color:#fff;
-            font-family:inherit;
-            font-size:22px;
-            padding:14px;
-            cursor:pointer;
-            background:rgba(255,255,255,0.04);
-            opacity:0;
-            transform: translateY(24px);
-        }
-        .unit-item-btn.animate-in{
-            opacity:1;
-            transform: translateY(0);
-            transition: opacity 0.45s ease-out, transform 0.45s ease-out;
-        }
-        .unit-item-btn:hover{
-            background:#fff;
-            color:#000;
-        }
-        .launch-tip{
-            margin-top:24px;
-            color:#aaa;
-            font-size:16px;
-            text-align:center;
-        }
-        #novel-root {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            background: #000000;
-            display:none;
-        }
-        .bg-layer {
-            position: absolute;
-            inset: 0;
-            background-size: cover;
-            background-position: center;
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
-            z-index: 1;
-        }
-        .char-layer {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            gap: 4rem;
-            padding-bottom: 24vh;
-            z-index: 2;
-            will-change: transform, opacity;
-            min-height:75vh;
-        }
-        .char-img {
-            max-height: 70vh;
-            max-width: 40vw;
-            pointer-events: none;
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
-            opacity: 0;
-            transform: translateY(0px);
-            transition: opacity 0.15s ease‑out;
-            will‑change: opacity;
-        }
-        .char-img.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .text-center-wrap {
-            position: absolute;
-            inset: 0;
-            z-index: 3;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 2rem;
-        }
-        .center-text {
-            font-size: 26px;
-            line-height: 2.2;
-            text-align: center;
-        }
-        .dialog-box {
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: min(95vw, 1100px);
-    background: rgba(0, 0, 0, 0);
-    /* 替换原来 border:2px solid #fff; border-image: url('') 2 stretch; */
-    border:11px solid transparent;
-    border-image: url("./ui/border_32.png") 11 fill / 18px stretch;
-    border-image-repeat: stretch;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
-    border-radius: 0;
-    padding: 16px 20px;
-    z-index: 4;
-    max-height: 800px; /* 设置比对话框最大高度更大的值 */
-    transition: max-height 0.28s ease-out, bottom 0.28s ease-out;
-    height: auto;
-}
-        .dialog-name {
-            font-family: "big", sans-serif;
-            font-size: 24px;
-            margin-bottom: 8px;
-            margin-left:-10px;
-            color: #ffdd77;
-            font-weight:500;
-        }
-        .dialog-content {
-            font-size: 20px;
-            line-height: 1.5;
-            font-family: "middle", sans-serif;
-        }
-        .option-fixed-wrap {
-            position: absolute;
-            width: min(90vw, 700px);
-            z-index: 10;
-        }
-        .option-wrap {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .option-btn {
-            background: transparent;
-            border: 2px solid #fff;
-            border-image: url('') 2 stretch;
-            color: #fff;
-            font-family: "middle", sans-serif;
-            font-size: 22px;
-            padding: 10px;
-            border-radius: 0;
-            cursor: pointer;
-            background: rgba(0, 0, 0, 0.65);
-            transition: transform 0.32s ease-out;
-        }
-        .option-btn:hover {
-            background: #ffffff;
-            color: #000;
-            transition: transform 0.32s ease-out;
-        }
-        #saveMenuBtn {
-            position: fixed;
-            top: 12px;
-            left: 12px;
-            background: transparent;
-            border: 2px solid #77ddff;
-            border-image: url('') 2 stretch;
-            color: #77ddff;
-            font-family: "small", sans-serif;
-            font-size: 14px;
-            padding: 8px 12px;
-            border-radius: 0;
-            cursor: pointer;
-            z-index: 99999;
-            display:none;
-        }
-        #saveMenuBtn:hover {
-            background: #77ddff;
-            color: #000;
-        }
-        @keyframes shakeAnim {
-            0%, 100% { transform: translate(0, 0); }
-            20% { transform: translate(-8px, 4px); }
-            40% { transform: translate(8px, -4px); }
-            60% { transform: translate(-6px, -2px); }
-            80% { transform: translate(6px, 2px); }
-        }
-        .effect-shake {
-            animation: shakeAnim 0.4s ease-in-out;
-        }
-        @keyframes flashAnim {
-            0% { filter: brightness(1); }
-            50% { filter: brightness(3); }
-            100% { filter: brightness(1); }
-        }
-        .effect-flash {
-            animation: flashAnim 0.5s ease-out;
-        }
-        /* =====存档弹窗样式===== */
-        .save-modal-mask{
-            position:fixed;
-            inset:0;
-            background:rgba(0,0,0,0.75);
-            z-index:100000;
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            padding:16px;
-            transform: translateY(100%);
-            transition: transform 0.32s ease-out;
-        }
-        .save-modal-mask.show{
-            transform: translateY(0);
-        }
-        .save-modal{
-            width:min(92vw,520px);
-            background:#000;
-            border:2px solid #fff;
-            border-image: url('') 2 stretch;
-            padding:20px;
-            max-height:85vh;
-            overflow-y:auto;
-            transform: scale(1);
-            transition: transform 0.32s ease-out;
-        }
-        .save-modal-mask.show .save-modal{
-            transform: scale(1);
-        }
-        .save-modal h3{
-            text-align:center;
-            margin-bottom:16px;
-            font-size:22px;
-        }
-        .save-slot-item{
-            border:1px solid #666;
-            border-image: url('') 1 stretch;
-            padding:14px;
-            margin-bottom:12px;
-        }
-        .slot-empty{
-            color:#888;
-        }
-        .slot-name-row{
-            display:flex;
-            gap:8px;
-            align-items:center;
-            margin-bottom:8px;
-        }
-        .slot-name{
-            font-size:18px;
-            color:#ffdd77;
-        }
-        .slot-time{
-            font-size:13px;
-            color:#aaa;
-            margin-bottom:10px;
-        }
-        .slot-buttons{
-            display:flex;
-            flex-wrap:wrap;
-            gap:8px;
-        }
-        .slot-btn{
-            background:transparent;
-            border:1px solid #fff;
-            border-image: url('') 1 stretch;
-            color:#fff;
-            font-family:inherit;
-            font-size:14px;
-            padding:6px 10px;
-            cursor:pointer;
-        }
-        .slot-btn:hover{
-            background:#fff;
-            color:#000;
-        }
-        .slot-btn.del{
-            border-color:#ff5555;
-            color:#ff5555;
-        }
-        .slot-btn.del:hover{
-            background:#ff5555;
-            color:#000;
-        }
-        .modal-close-wrap{
-            text-align:center;
-            margin-top:16px;
-        }
-        /* =========自定义弹窗========= */
-        .custom-dialog-mask {
-            position: fixed;
-            inset:0;
-            background:rgba(0,0,0,0.8);
-            z-index: 100001;
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            padding:16px;
-            transform: translateY(100%);
-            transition: transform 0.32s ease-out;
-        }
-        .custom-dialog-mask.show {
-            transform: translateY(0);
-        }
-        .custom-dialog-box {
-            width: min(90vw,420px);
-            background:#000;
-            border:2px solid #fff;
-            border-image: url('') 2 stretch;
-            padding:20px;
-            transform: scale(0.92);
-            transition: transform 0.32s ease-out;
-        }
-        .custom-dialog-mask.show .custom-dialog-box{
-            transform: scale(1);
-        }
-        .custom-dialog-message {
-            font-size:20px;
-            margin-bottom:16px;
-        }
-        .custom-dialog-input {
-            width:100%;
-            background:#111;
-            color:#fff;
-            border:1px solid #fff;
-            border-image: url('') 1 stretch;
-            font-family:inherit;
-            font-size:18px;
-            padding:10px;
-            margin-bottom:16px;
-            outline:none;
-        }
-        .custom-dialog-buttons {
-            display:flex;
-            gap:10px;
-            justify-content:center;
-        }
-        .custom-dialog-btn {
-            background:transparent;
-            border:1px solid #fff;
-            border-image: url('') 1 stretch;
-            color:#fff;
-            font-family:inherit;
-            font-size:16px;
-            padding:10px 20px;
-            cursor:pointer;
-            min-height:44px;
-            min-width:80px;
-        }
-        .custom-dialog-btn:hover {
-            background:#fff;
-            color:#000;
-        }
-        /* 全局加载遮罩 */
-        #preloadTip {
-            position:fixed;
-            inset:0;
-            background:#000;
-            color:#fff;
-            display:flex;
-            flex-direction:column;
-            gap:12px;
-            align-items:center;
-            justify-content:center;
-            z-index:999999;
-        }
-        #preloadTip.hidden{
-            display:none;
-        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        html,body{width:100vw;height:100vh;overflow:hidden;font-family:monospace;color:#fff;background:#000}
+        @font-face{font-family:"big";src:url("./fonts/minecraft.ttf") format("truetype");font-weight:normal;font-style:normal}
+        @font-face{font-family:"middle";src:url("./fonts/HYPixel11pxU-2.woff2") format("woff2");font-weight:normal;font-style:normal}
+        @font-face{font-family:"small";src:url("./fonts/HYPixel9pxU-2.ttf") format("truetype");font-weight:normal;font-style:normal}
+        .rotate-warning{position:fixed;inset:0;background:#000;z-index:999999;display:none;justify-content:center;align-items:center;font-size:24px;text-align:center;padding:20px}
+        .rotate-warning.show{display:flex}
+        .page-transition-fade{position:absolute;inset:0;background:#000;z-index:998;pointer-events:none;opacity:0;transition:opacity 0.35s ease-in-out}
+        .page-transition-fade.in{opacity:1}
+        #unit-launcher{position:fixed;inset:0;z-index:999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem}
+        #unit-launcher h2{font-size:32px;margin-bottom:2rem}
+        .unit-list{display:flex;flex-direction:column;gap:14px;width:min(90vw,500px)}
+        .unit-item-btn{width:100%;background:transparent;border:2px solid #fff;border-image:url('') 2 stretch;color:#fff;font-family:inherit;font-size:22px;padding:14px;cursor:pointer;background:rgba(255,255,255,0.04);opacity:0;transform:translateY(24px)}
+        .unit-item-btn.animate-in{opacity:1;transform:translateY(0);transition:opacity 0.45s ease-out,transform 0.45s ease-out}
+        .unit-item-btn:hover{background:#fff;color:#000}
+        .launch-tip{margin-top:24px;color:#aaa;font-size:16px;text-align:center}
+        #novel-root{width:100%;height:100%;position:relative;background:#000;display:none}
+        .bg-layer{position:absolute;inset:0;background-size:cover;background-position:center;image-rendering:pixelated;image-rendering:crisp-edges;z-index:1}
+        .char-layer{position:absolute;inset:0;display:flex;justify-content:center;align-items:flex-end;gap:4rem;padding-bottom:24vh;z-index:2;will-change:transform,opacity;min-height:75vh}
+        .char-img{max-height:70vh;max-width:40vw;pointer-events:none;image-rendering:pixelated;image-rendering:crisp-edges;opacity:0;transform:translateY(0);transition:opacity 0.15s ease‑out;will‑change:opacity}
+        .char-img.visible{opacity:1}
+        .text-center-wrap{position:absolute;inset:0;z-index:3;display:flex;justify-content:center;align-items:center;padding:2rem}
+        .center-text{font-size:26px;line-height:2.2;text-align:center}
+        .dialog-box{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);width:min(95vw,1100px);background:rgba(0,0,0,0);border:11px solid transparent;border-image:url("./ui/border_32.png") 11 fill / 18px stretch;border-image-repeat:stretch;image-rendering:pixelated;image-rendering:crisp-edges;padding:16px 20px;z-index:4;max-height:800px;transition:max-height 0.28s ease-out,bottom 0.28s ease-out;height:auto}
+        .dialog-name{font-family:"big",sans-serif;font-size:24px;margin-bottom:8px;margin-left:-10px;color:#ffdd77;font-weight:500}
+        .dialog-content{font-size:20px;line-height:1.5;font-family:"middle",sans-serif}
+        .option-fixed-wrap{position:absolute;width:min(90vw,700px);z-index:10}
+        .option-wrap{display:flex;flex-direction:column;gap:10px}
+        .option-btn{background:transparent;border:2px solid #fff;border-image:url('') 2 stretch;color:#fff;font-family:"middle",sans-serif;font-size:22px;padding:10px;border-radius:0;cursor:pointer;background:rgba(0,0,0,0.65);transition:transform 0.32s ease-out}
+        .option-btn:hover{background:#fff;color:#000}
+        #saveMenuBtn{position:fixed;top:12px;left:12px;background:transparent;border:2px solid #77ddff;border-image:url('') 2 stretch;color:#77ddff;font-family:"small",sans-serif;font-size:14px;padding:8px 12px;border-radius:0;cursor:pointer;z-index:99999;display:none}
+        #saveMenuBtn:hover{background:#77ddff;color:#000}
+        @keyframes shakeAnim{0%,100%{transform:translate(0,0)}20%{transform:translate(-8px,4px)}40%{transform:translate(8px,-4px)}60%{transform:translate(-6px,-2px)}80%{transform:translate(6px,2px)}}
+        .effect-shake{animation:shakeAnim 0.4s ease-in-out}
+        @keyframes flashAnim{0%{filter:brightness(1)}50%{filter:brightness(3)}100%{filter:brightness(1)}}
+        .effect-flash{animation:flashAnim 0.5s ease-out}
+        .save-modal-mask{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:100000;display:flex;justify-content:center;align-items:center;padding:16px;transform:translateY(100%);transition:transform 0.32s ease-out}
+        .save-modal-mask.show{transform:translateY(0)}
+        .save-modal{width:min(92vw,520px);background:#000;border:2px solid #fff;border-image:url('') 2 stretch;padding:20px;max-height:85vh;overflow-y:auto;transform:scale(1);transition:transform 0.32s ease-out}
+        .save-modal h3{text-align:center;margin-bottom:16px;font-size:22px}
+        .save-slot-item{border:1px solid #666;border-image:url('') 1 stretch;padding:14px;margin-bottom:12px}
+        .slot-empty{color:#888}
+        .slot-name-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+        .slot-name{font-size:18px;color:#ffdd77}
+        .slot-time{font-size:13px;color:#aaa;margin-bottom:10px}
+        .slot-buttons{display:flex;flex-wrap:wrap;gap:8px}
+        .slot-btn{background:transparent;border:1px solid #fff;border-image:url('') 1 stretch;color:#fff;font-family:inherit;font-size:14px;padding:6px 10px;cursor:pointer}
+        .slot-btn:hover{background:#fff;color:#000}
+        .slot-btn.del{border-color:#ff5555;color:#ff5555}
+        .slot-btn.del:hover{background:#ff5555;color:#000}
+        .modal-close-wrap{text-align:center;margin-top:16px}
+        .custom-dialog-mask{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100001;display:flex;justify-content:center;align-items:center;padding:16px;transform:translateY(100%);transition:transform 0.32s ease-out}
+        .custom-dialog-mask.show{transform:translateY(0)}
+        .custom-dialog-box{width:min(90vw,420px);background:#000;border:2px solid #fff;border-image:url('') 2 stretch;padding:20px;transform:scale(0.92);transition:transform 0.32s ease-out}
+        .custom-dialog-mask.show .custom-dialog-box{transform:scale(1)}
+        .custom-dialog-message{font-size:20px;margin-bottom:16px}
+        .custom-dialog-input{width:100%;background:#111;color:#fff;border:1px solid #fff;border-image:url('') 1 stretch;font-family:inherit;font-size:18px;padding:10px;margin-bottom:16px;outline:none}
+        .custom-dialog-buttons{display:flex;gap:10px;justify-content:center}
+        .custom-dialog-btn{background:transparent;border:1px solid #fff;border-image:url('') 1 stretch;color:#fff;font-family:inherit;font-size:16px;padding:10px 20px;cursor:pointer;min-height:44px;min-width:80px}
+        .custom-dialog-btn:hover{background:#fff;color:#000}
+        #preloadTip{position:fixed;inset:0;background:#000;color:#fff;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;z-index:999999}
+        #preloadTip.hidden{display:none}
     </style>
 </head>
 <body>
@@ -453,7 +74,6 @@
         <div id="preloadText">资源加载中…</div>
         <div id="preloadProgress"></div>
     </div>
-    <!-- Unit剧本选择启动页 -->
     <div id="unit-launcher">
         <h2>选择剧本单元</h2>
         <div class="unit-list" id="unitListWrap"></div>
@@ -482,172 +102,115 @@
         </div>
     </div>
 <script>
-const CONFIG = {
-    typingSpeed: 60,
-    toneFreq: 880,
-    toneVolume: 0.15,
-    buttonToneFreq: 620,
-    buttonToneVolume: 0.12,
-    slotCount:3,
-    preloadTimeoutMs: 10000,
-    defaultOptionPos:{
-        top:null,
-        bottom:"220px",
-        left:"50%",
-        right:null,
-        transform:"translateX(-50%)"
-    },
-    fadeTransitionMs:350
-};
-// 当前加载的unit标识，用来隔离localStorage存档
-let currentUnitId = null;
-let IMG_ALIAS = {};
-let IMG_FALLBACK = "";
-let PAGES = [];
-/**
- * 解析图片别名
- * @param {string} str
- * @returns {string}
- */
+const CONFIG={typingSpeed:60,toneFreq:880,toneVolume:0.15,buttonToneFreq:620,buttonToneVolume:0.12,slotCount:3,preloadTimeoutMs:10000,defaultOptionPos:{top:null,bottom:"220px",left:"50%",right:null,transform:"translateX(-50%)"},fadeTransitionMs:350};
+let currentUnitId=null;
+let IMG_ALIAS={};
+let IMG_FALLBACK="";
+let PAGES=[];
 function resolveImgAlias(str){
-    if(!str) return str;
-    if(str === "none") return "none";
-    if(IMG_ALIAS.hasOwnProperty(str)){
-        return IMG_ALIAS[str];
-    }
+    if(!str)return str;
+    if(str==="none")return"none";
+    if(IMG_ALIAS.hasOwnProperty(str))return IMG_ALIAS[str];
     return str;
 }
-const preloadedImageMap = new Map();
-// 按钮音效
+const preloadedImageMap=new Map();
 function playButtonBeep(){
-    if (!audioCtx) return;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'square';
-    osc.frequency.value = CONFIG.buttonToneFreq;
-    gain.gain.setValueAtTime(CONFIG.buttonToneVolume, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.025);
+    if(!audioCtx)return;
+    const osc=audioCtx.createOscillator();
+    const gain=audioCtx.createGain();
+    osc.type='square';
+    osc.frequency.value=CONFIG.buttonToneFreq;
+    gain.gain.setValueAtTime(CONFIG.buttonToneVolume,audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.025);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     osc.start();
-    osc.stop(audioCtx.currentTime + 0.025);
+    osc.stop(audioCtx.currentTime+0.025);
 }
-document.addEventListener('click',(e)=>{
-    const target = e.target;
-    if(target.tagName === 'BUTTON'){
-        initAudio();
-        playButtonBeep();
-    }
+document.addEventListener('click',e=>{
+    if(e.target.tagName==='BUTTON'){initAudio();playButtonBeep();}
 });
-document.addEventListener('touchend',(e)=>{
-    const target = e.target;
-    if(target.tagName === 'BUTTON'){
-        initAudio();
-        playButtonBeep();
-    }
+document.addEventListener('touchend',e=>{
+    if(e.target.tagName==='BUTTON'){initAudio();playButtonBeep();}
 },{passive:false});
-// ====自定义弹窗工具====
-const customDialogMask = document.getElementById("customDialogMask");
-const customDialogMsg = document.getElementById("customDialogMsg");
-const customDialogInput = document.getElementById("customDialogInput");
-const customDialogOk = document.getElementById("customDialogOk");
-const customDialogCancel = document.getElementById("customDialogCancel");
-let customDialogResolve = null;
-let customDialogIsOpen = false;
+const customDialogMask=document.getElementById("customDialogMask");
+const customDialogMsg=document.getElementById("customDialogMsg");
+const customDialogInput=document.getElementById("customDialogInput");
+const customDialogOk=document.getElementById("customDialogOk");
+const customDialogCancel=document.getElementById("customDialogCancel");
+let customDialogResolve=null;
+let customDialogIsOpen=false;
 function closeCustomDialog(){
     customDialogMask.classList.remove("show");
-    customDialogIsOpen = false;
-    customDialogResolve = null;
+    customDialogIsOpen=false;
+    customDialogResolve=null;
 }
-function customPrompt(message, defaultVal){
-    return new Promise((resolve)=>{
-        if(customDialogIsOpen){ resolve(null); return; }
-        customDialogIsOpen = true;
-        customDialogResolve = resolve;
-        customDialogMsg.innerText = message;
-        customDialogInput.style.display = "block";
-        customDialogInput.value = defaultVal ?? "";
+function customPrompt(message,defaultVal){
+    return new Promise(resolve=>{
+        if(customDialogIsOpen){resolve(null);return;}
+        customDialogIsOpen=true;
+        customDialogResolve=resolve;
+        customDialogMsg.innerText=message;
+        customDialogInput.style.display="block";
+        customDialogInput.value=defaultVal??"";
         customDialogMask.classList.add("show");
-        setTimeout(()=>{ customDialogInput.focus(); },120);
+        setTimeout(()=>customDialogInput.focus(),120);
     })
 }
 function customConfirm(message){
-    return new Promise((resolve)=>{
-        if(customDialogIsOpen){ resolve(false); return; }
-        customDialogIsOpen = true;
-        customDialogResolve = resolve;
-        customDialogMsg.innerText = message;
-        customDialogInput.style.display = "none";
+    return new Promise(resolve=>{
+        if(customDialogIsOpen){resolve(false);return;}
+        customDialogIsOpen=true;
+        customDialogResolve=resolve;
+        customDialogMsg.innerText=message;
+        customDialogInput.style.display="none";
         customDialogMask.classList.add("show");
     })
 }
 function handleDialogOk(){
-    if(!customDialogResolve) return;
-    let res;
-    if(customDialogInput.style.display !== "none"){
-        res = customDialogInput.value;
-    }else{
-        res = true;
-    }
-    const fn = customDialogResolve;
+    if(!customDialogResolve)return;
+    let res=customDialogInput.style.display!=="none"?customDialogInput.value:true;
+    const fn=customDialogResolve;
     closeCustomDialog();
     fn(res);
 }
 function handleDialogCancel(){
-    if(!customDialogResolve) return;
-    const fn = customDialogResolve;
-    const isPrompt = customDialogInput.style.display !== "none";
+    if(!customDialogResolve)return;
+    const fn=customDialogResolve;
+    const isPrompt=customDialogInput.style.display!=="none";
     closeCustomDialog();
-    fn(isPrompt ? null : false);
+    fn(isPrompt?null:false);
 }
-customDialogOk.addEventListener('click', handleDialogOk);
-customDialogOk.addEventListener('touchend', (e)=>{e.preventDefault();handleDialogOk();});
-customDialogCancel.addEventListener('click', handleDialogCancel);
-customDialogCancel.addEventListener('touchend', (e)=>{e.preventDefault();handleDialogCancel();});
-customDialogMask.onclick = (e)=>{if(e.target === customDialogMask){handleDialogCancel();}};
-document.addEventListener("keydown",(e)=>{
-    if(!customDialogMask.classList.contains("show")) return;
-    if(e.key === "Escape") handleDialogCancel();
-    if(e.key === "Enter") handleDialogOk();
+customDialogOk.addEventListener('click',handleDialogOk);
+customDialogOk.addEventListener('touchend',e=>{e.preventDefault();handleDialogOk();});
+customDialogCancel.addEventListener('click',handleDialogCancel);
+customDialogCancel.addEventListener('touchend',e=>{e.preventDefault();handleDialogCancel();});
+customDialogMask.onclick=e=>{if(e.target===customDialogMask)handleDialogCancel();};
+document.addEventListener("keydown",e=>{
+    if(!customDialogMask.classList.contains("show"))return;
+    if(e.key==="Escape")handleDialogCancel();
+    if(e.key==="Enter")handleDialogOk();
 });
-let audioCtx = null;
-let typeAbortController = null;
-let bgmAudio = null;
-let bgmPollTimer = null;
-// 存档key 按unit隔离
-function getSaveKey(){
-    return "vn_save_slots__"+currentUnitId;
-}
+let audioCtx=null;
+let typeAbortController=null;
+let bgmAudio=null;
+let bgmPollTimer=null;
+function getSaveKey(){return"vn_save_slots__"+currentUnitId;}
 function getAllSlots(){
-    const raw = localStorage.getItem(getSaveKey());
-    if(!raw) return Array(CONFIG.slotCount).fill(null);
-    try{
-        return JSON.parse(raw);
-    }catch(e){
-        return Array(CONFIG.slotCount).fill(null);
-    }
+    const raw=localStorage.getItem(getSaveKey());
+    if(!raw)return Array(CONFIG.slotCount).fill(null);
+    try{return JSON.parse(raw);}catch{return Array(CONFIG.slotCount).fill(null);}
 }
-function saveAllSlots(slots){
-    localStorage.setItem(getSaveKey(), JSON.stringify(slots));
-}
-function writeSlot(slotIndex, slotName){
-    const slots = getAllSlots();
-    slots[slotIndex] = {
-        name: slotName || `存档${slotIndex+1}`,
-        timestamp: Date.now(),
-        currentPageName: currentPageName,
-        globalVars: {...globalVars},
-        pageLineIndex: currentPageLineIndex ?? 0
-    };
+function saveAllSlots(slots){localStorage.setItem(getSaveKey(),JSON.stringify(slots));}
+function writeSlot(slotIndex,slotName){
+    const slots=getAllSlots();
+    slots[slotIndex]={name:slotName||`存档${slotIndex+1}`,timestamp:Date.now(),currentPageName:currentPageName,globalVars:{...globalVars},pageLineIndex:currentPageLineIndex??0};
     saveAllSlots(slots);
 }
-function readSlot(slotIndex){
-    const slots = getAllSlots();
-    return slots[slotIndex];
-}
+function readSlot(slotIndex){return getAllSlots()[slotIndex];}
 function deleteSlot(slotIndex){
-    const slots = getAllSlots();
-    slots[slotIndex] = null;
+    const slots=getAllSlots();
+    slots[slotIndex]=null;
     saveAllSlots(slots);
 }
 function formatTime(ts){
@@ -655,25 +218,23 @@ function formatTime(ts){
     return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
 }
 function renderSaveModal(){
-    const container = document.getElementById("slotContainer");
+    const container=document.getElementById("slotContainer");
     container.innerHTML="";
-    const slots = getAllSlots();
+    const slots=getAllSlots();
     for(let i=0;i<CONFIG.slotCount;i++){
-        const slotData = slots[i];
-        const div = document.createElement("div");
+        const slotData=slots[i];
+        const div=document.createElement("div");
         div.className="save-slot-item";
         if(!slotData){
-            div.innerHTML = `
+            div.innerHTML=`
                 <div class="slot-empty">槽位${i+1}：空存档</div>
                 <div class="slot-buttons" style="margin-top:10px;">
                     <button class="slot-btn save-slot-write" data-slot="${i}">保存到此槽</button>
                 </div>
             `;
         }else{
-            div.innerHTML = `
-                <div class="slot-name-row">
-                    <span class="slot-name">${slotData.name}</span>
-                </div>
+            div.innerHTML=`
+                <div class="slot-name-row"><span class="slot-name">${slotData.name}</span></div>
                 <div class="slot-time">${formatTime(slotData.timestamp)}</div>
                 <div class="slot-buttons">
                     <button class="slot-btn save-slot-load" data-slot="${i}">读取</button>
@@ -687,37 +248,34 @@ function renderSaveModal(){
     }
     container.querySelectorAll(".save-slot-write").forEach(btn=>{
         btn.onclick=async ()=>{
-            const idx = Number(btn.dataset.slot);
+            const idx=Number(btn.dataset.slot);
             initAudio();
-            const name = await customPrompt("输入存档名称：",`存档${idx+1}`);
-            if(name!==null){
-                writeSlot(idx, name.trim()||`存档${idx+1}`);
-                renderSaveModal();
-            }
+            const name=await customPrompt("输入存档名称：",`存档${idx+1}`);
+            if(name!==null)writeSlot(idx,name.trim()||`存档${idx+1}`),renderSaveModal();
         }
     });
     container.querySelectorAll(".save-slot-load").forEach(btn=>{
         btn.onclick=async ()=>{
-            const idx = Number(btn.dataset.slot);
-            const data = readSlot(idx);
+            const idx=Number(btn.dataset.slot);
+            const data=readSlot(idx);
             if(!data)return;
             initAudio();
             document.getElementById("saveModalMask").classList.remove("show");
-            currentPageName = data.currentPageName;
-            globalVars = {...data.globalVars};
-            currentPageLineIndex = data.pageLineIndex ?? 0;
-            await renderPage(currentPageName, currentPageLineIndex);
+            currentPageName=data.currentPageName;
+            globalVars={...data.globalVars};
+            currentPageLineIndex=data.pageLineIndex??0;
+            await renderPage(currentPageName,currentPageLineIndex);
         }
     });
     container.querySelectorAll(".save-slot-rename").forEach(btn=>{
         btn.onclick=async ()=>{
-            const idx = Number(btn.dataset.slot);
-            const data = readSlot(idx);
-            if(!data) return;
-            const newName = await customPrompt("修改存档名称", data.name);
+            const idx=Number(btn.dataset.slot);
+            const data=readSlot(idx);
+            if(!data)return;
+            const newName=await customPrompt("修改存档名称",data.name);
             if(newName!==null){
-                data.name = newName.trim()||data.name;
-                const slots = getAllSlots();
+                data.name=newName.trim()||data.name;
+                const slots=getAllSlots();
                 slots[idx]=data;
                 saveAllSlots(slots);
                 renderSaveModal();
@@ -726,455 +284,379 @@ function renderSaveModal(){
     });
     container.querySelectorAll(".save-slot-del").forEach(btn=>{
         btn.onclick=async ()=>{
-            const idx = Number(btn.dataset.slot);
-            const ok = await customConfirm("确定删除该存档？");
-            if(ok){
-                deleteSlot(idx);
-                renderSaveModal();
-            }
+            const idx=Number(btn.dataset.slot);
+            const ok=await customConfirm("确定删除该存档？");
+            if(ok){deleteSlot(idx);renderSaveModal();}
         }
     });
 }
-function initAudio() {
-    if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if(audioCtx.state === 'suspended') audioCtx.resume();
+function initAudio(){
+    if(!audioCtx){
+        audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+        if(audioCtx.state==='suspended')audioCtx.resume();
     }
 }
-function playTypeBeep() {
-    if (!audioCtx) return;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'square';
-    osc.frequency.value = CONFIG.toneFreq;
-    gain.gain.setValueAtTime(CONFIG.toneVolume, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
+function playTypeBeep(){
+    if(!audioCtx)return;
+    const osc=audioCtx.createOscillator();
+    const gain=audioCtx.createGain();
+    osc.type='square';
+    osc.frequency.value=CONFIG.toneFreq;
+    gain.gain.setValueAtTime(CONFIG.toneVolume,audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.03);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     osc.start();
-    osc.stop(audioCtx.currentTime + 0.03);
+    osc.stop(audioCtx.currentTime+0.03);
 }
-function sleepMs(ms, signal) {
-    return new Promise((resolve) => {
-        const timer = setTimeout(resolve, ms);
-        signal?.addEventListener('abort', () => {clearTimeout(timer);resolve();});
+function sleepMs(ms,signal){
+    return new Promise(resolve=>{
+        const timer=setTimeout(resolve,ms);
+        signal?.addEventListener('abort',()=>{clearTimeout(timer);resolve();});
     });
 }
-const rotateWarningEl = document.getElementById("rotateWarning");
+const rotateWarningEl=document.getElementById("rotateWarning");
 function checkOrientation(){
-    const isPortrait = (window.innerHeight > window.innerWidth);
-    if(!isPortrait){
-        rotateWarningEl.classList.add("show");
-    }else{
-        rotateWarningEl.classList.remove("show");
-    }
+    const isPortrait=(window.innerHeight>window.innerWidth);
+    rotateWarningEl.classList.toggle("show",!isPortrait);
 }
-window.addEventListener("resize", checkOrientation);
-window.addEventListener("orientationchange", checkOrientation);
-function stopBGM() {
-    if(bgmPollTimer){ clearInterval(bgmPollTimer); bgmPollTimer = null; }
-    if (bgmAudio) {
-        bgmAudio.loop = false;
-        bgmAudio.onended = null;
-        bgmAudio.ontimeupdate = null;
+window.addEventListener("resize",checkOrientation);
+window.addEventListener("orientationchange",checkOrientation);
+function stopBGM(){
+    if(bgmPollTimer){clearInterval(bgmPollTimer);bgmPollTimer=null;}
+    if(bgmAudio){
+        bgmAudio.loop=false;
+        bgmAudio.onended=null;
+        bgmAudio.ontimeupdate=null;
         bgmAudio.pause();
-        bgmAudio.src = "";
-        bgmAudio = null;
+        bgmAudio.src="";
+        bgmAudio=null;
     }
 }
-async function startBGM(url) {
+async function startBGM(url){
     stopBGM();
-    if (!url) return;
-    bgmAudio = new Audio(url);
-    bgmAudio.loop = true;
-    bgmAudio.onended = () => {
-        if(!bgmAudio) return;
-        bgmAudio.currentTime = 0;
-        bgmAudio.play().catch(e=>{});
+    if(!url)return;
+    bgmAudio=new Audio(url);
+    bgmAudio.loop=true;
+    bgmAudio.onended=()=>{
+        if(!bgmAudio)return;
+        bgmAudio.currentTime=0;
+        bgmAudio.play().catch(()=>{});
     };
-    bgmPollTimer = setInterval(()=>{
-        if(!bgmAudio){ clearInterval(bgmPollTimer); bgmPollTimer = null; return; }
-        if(bgmAudio.paused && !bgmAudio.ended){ bgmAudio.play().catch(err=>{}); }
+    bgmPollTimer=setInterval(()=>{
+        if(!bgmAudio){clearInterval(bgmPollTimer);bgmPollTimer=null;return;}
+        if(bgmAudio.paused&&!bgmAudio.ended)bgmAudio.play().catch(()=>{});
     },200);
-    await bgmAudio.play().catch(err => console.log("BGM需要交互"));
+    await bgmAudio.play().catch(err=>console.log("BGM需要交互"));
 }
-function evalCondition(cond) {
-    const v = globalVars[cond.var] ?? "";
-    if (cond.eq !== undefined) return v === cond.eq;
-    if (cond.neq !== undefined) return v !== cond.neq;
+function evalCondition(cond){
+    const v=globalVars[cond.var]??"";
+    if(cond.eq!==undefined)return v===cond.eq;
+    if(cond.neq!==undefined)return v!==cond.neq;
     return false;
 }
-function resolveBranch(branchList) {
-    for (const br of branchList) {
-        if (evalCondition(br.cond)) return br.goto;
-    }
+function resolveBranch(branchList){
+    for(const br of branchList){if(evalCondition(br.cond))return br.goto;}
     return null;
 }
-async function typeWrite(element, fullText) {
-    typingFinished = false;
-    isTyping = true;
-    element.innerText = "";
-    typeAbortController = new AbortController();
-    const signal = typeAbortController.signal;
-    const chars = Array.from(fullText);
-    for (let i = 0; i < chars.length; i++) {
-        if (signal.aborted) { element.innerText = fullText; break; }
-        element.innerText += chars[i];
+async function typeWrite(element,fullText){
+    typingFinished=false;
+    isTyping=true;
+    element.innerText="";
+    typeAbortController=new AbortController();
+    const signal=typeAbortController.signal;
+    const chars=Array.from(fullText);
+    for(let i=0;i<chars.length;i++){
+        if(signal.aborted){element.innerText=fullText;break;}
+        element.innerText+=chars[i];
         playTypeBeep();
-        await sleepMs(CONFIG.typingSpeed, signal);
+        await sleepMs(CONFIG.typingSpeed,signal);
     }
-    typingFinished = true;
-    isTyping = false;
+    typingFinished=true;
+    isTyping=false;
 }
-function skipTyping(el, fullText) {
-    if(typeAbortController) typeAbortController.abort();
-    isTyping = false;
-    el.innerText = fullText;
-    typingFinished = true;
+function skipTyping(el,fullText){
+    if(typeAbortController)typeAbortController.abort();
+    isTyping=false;
+    el.innerText=fullText;
+    typingFinished=true;
 }
-async function updateCharLayer(root, charImgsArr){
-    let charWrap = root.querySelector(".char-layer");
+async function updateCharLayer(root,charImgsArr){
+    let charWrap=root.querySelector(".char-layer");
     if(!charWrap){
-        charWrap = document.createElement("div");
-        charWrap.className = "char-layer";
+        charWrap=document.createElement("div");
+        charWrap.className="char-layer";
         root.appendChild(charWrap);
     }
-    charWrap.innerHTML = "";
-    if(!charImgsArr || charImgsArr.length ===0) return;
-    for(let i=0; i<charImgsArr.length; i++){
-        const imgAlias = charImgsArr[i];
-        const imgUrl = resolveImgAlias(imgAlias);
-        const img = document.createElement("img");
-        img.className = "char-img";
-        img.src = imgUrl;
-        img.onerror = function(){ if(IMG_FALLBACK) this.src = IMG_FALLBACK; };
+    charWrap.innerHTML="";
+    if(!charImgsArr||charImgsArr.length===0)return;
+    for(let i=0;i<charImgsArr.length;i++){
+        const imgUrl=resolveImgAlias(charImgsArr[i]);
+        const img=document.createElement("img");
+        img.className="char-img";
+        img.src=imgUrl;
+        img.onerror=function(){if(IMG_FALLBACK)this.src=IMG_FALLBACK;};
         charWrap.appendChild(img);
-        try{ await img.decode(); }catch(e){}
+        try{await img.decode();}catch{}
         img.classList.add("visible");
     }
 }
-let globalVars = {};
-let currentPageName = "";
-let currentPageLineIndex = 0;
-let typingFinished = false;
-let isTyping = false;
-let pageLineItems = [];
-function getPageById(pageName) {
-    return PAGES.find(p => p.page_name === pageName);
-}
-
-/**
- * 页面淡入淡出转场
- */
+let globalVars={};
+let currentPageName="";
+let currentPageLineIndex=0;
+let typingFinished=false;
+let isTyping=false;
+let pageLineItems=[];
+function getPageById(pageName){return PAGES.find(p=>p.page_name===pageName);}
 async function runPageFadeTransition(root){
-    const fadeEl = document.createElement("div");
-    fadeEl.className = "page-transition-fade";
+    const fadeEl=document.createElement("div");
+    fadeEl.className="page-transition-fade";
     root.appendChild(fadeEl);
-    // 黑场盖上来
     fadeEl.classList.add("in");
-    await sleepMs(CONFIG.fadeTransitionMs, new AbortController().signal);
+    await sleepMs(CONFIG.fadeTransitionMs,new AbortController().signal);
     return fadeEl;
 }
-
-async function renderPage(pageName, startLineIdx=0) {
-    if(typeAbortController) typeAbortController.abort();
-    isTyping = false;
-    typingFinished = false;
-    const page = getPageById(pageName);
-    if (!page) throw new Error("找不到页面：" + pageName);
-    currentPageName = pageName;
-    currentPageLineIndex = startLineIdx;
-    if(page.lines && Array.isArray(page.lines)){
-        pageLineItems = page.lines;
-    }else{
-        pageLineItems = [{
-            speaker: page.speaker ?? "",
-            dialog: page.dialog ?? "",
-            charImgs: page.charImgs
-        }];
-    }
-    const root = document.getElementById("novel-root");
-
-    let fadeElement = null;
-    if(page.transition === "fade"){
-        fadeElement = await runPageFadeTransition(root);
-    }
-
-    root.innerHTML = "";
-    root.className = "";
-    if (page.effect === "shake") root.classList.add("effect-shake");
-    if (page.effect === "flash") root.classList.add("effect-flash");
-    if (page.set_value) {
-        for (const k in page.set_value) { globalVars[k] = page.set_value[k]; }
-    }
-    if (page.music_stop === true) stopBGM();
-    if (page.music_start) await startBGM(page.music_start);
-    const bgDiv = document.createElement("div");
-    bgDiv.className = "bg-layer";
-    const realBgUrl = resolveImgAlias(page.bg);
-    if (realBgUrl && realBgUrl !== "none") {
-        bgDiv.style.backgroundImage = `url(${realBgUrl})`;
-    } else {
-        bgDiv.style.backgroundColor = "#000";
-    }
+async function renderPage(pageName,startLineIdx=0){
+    if(typeAbortController)typeAbortController.abort();
+    isTyping=false;
+    typingFinished=false;
+    const page=getPageById(pageName);
+    if(!page)throw new Error("找不到页面："+pageName);
+    currentPageName=pageName;
+    currentPageLineIndex=startLineIdx;
+    if(page.lines&&Array.isArray(page.lines))pageLineItems=page.lines;
+    else pageLineItems=[{speaker:page.speaker??"",dialog:page.dialog??"",charImgs:page.charImgs}];
+    const root=document.getElementById("novel-root");
+    let fadeElement=null;
+    if(page.transition==="fade")fadeElement=await runPageFadeTransition(root);
+    root.innerHTML="";
+    root.className="";
+    if(page.effect==="shake")root.classList.add("effect-shake");
+    if(page.effect==="flash")root.classList.add("effect-flash");
+    if(page.set_value){for(const k in page.set_value)globalVars[k]=page.set_value[k];}
+    if(page.music_stop===true)stopBGM();
+    if(page.music_start)await startBGM(page.music_start);
+    const bgDiv=document.createElement("div");
+    bgDiv.className="bg-layer";
+    const realBgUrl=resolveImgAlias(page.bg);
+    if(realBgUrl&&realBgUrl!=="none")bgDiv.style.backgroundImage=`url(${realBgUrl})`;
+    else bgDiv.style.backgroundColor="#000";
     root.appendChild(bgDiv);
-    let textDom = null;
-    let fullText = "";
-    if(page.type === "text"){
-        const centerWrap = document.createElement("div");
-        centerWrap.className = "text-center-wrap";
-        textDom = document.createElement("div");
-        textDom.className = "center-text";
-        fullText = page.text;
+    let textDom=null;
+    let fullText="";
+    if(page.type==="text"){
+        const centerWrap=document.createElement("div");
+        centerWrap.className="text-center-wrap";
+        textDom=document.createElement("div");
+        textDom.className="center-text";
+        fullText=page.text;
         centerWrap.appendChild(textDom);
         root.appendChild(centerWrap);
-        await typeWrite(textDom, fullText);
-    }else if(page.type === "character" || page.type === "scene"){
-        const dBox = document.createElement("div");
-        dBox.className = "dialog-box";
-        const nameEl = document.createElement("div");
-        nameEl.className = "dialog-name";
-        textDom = document.createElement("div");
-        textDom.className = "dialog-content";
+        await typeWrite(textDom,fullText);
+    }else if(page.type==="character"||page.type==="scene"){
+        const dBox=document.createElement("div");
+        dBox.className="dialog-box";
+        const nameEl=document.createElement("div");
+        nameEl.className="dialog-name";
+        textDom=document.createElement("div");
+        textDom.className="dialog-content";
         dBox.appendChild(nameEl);
         dBox.appendChild(textDom);
         root.appendChild(dBox);
-        await renderCurrentLine(root, pageLineItems[currentPageLineIndex], nameEl, textDom);
+        await renderCurrentLine(root,pageLineItems[currentPageLineIndex],nameEl,textDom);
     }
-    if (page.options && Object.keys(page.options).length > 0) {
-        const fixedOptWrap = document.createElement("div");
-        fixedOptWrap.className = "option-fixed-wrap";
-        const pos = page.optionPos ? {...CONFIG.defaultOptionPos, ...page.optionPos} : {...CONFIG.defaultOptionPos};
-        if(pos.top!==null) fixedOptWrap.style.top = pos.top; else fixedOptWrap.style.top = "";
-        if(pos.bottom!==null) fixedOptWrap.style.bottom = pos.bottom; else fixedOptWrap.style.bottom = "";
-        if(pos.left!==null) fixedOptWrap.style.left = pos.left; else fixedOptWrap.style.left = "";
-        if(pos.right!==null) fixedOptWrap.style.right = pos.right; else fixedOptWrap.style.right = "";
-        if(pos.transform!==null) fixedOptWrap.style.transform = pos.transform; else fixedOptWrap.style.transform = "";
-        const optInner = document.createElement("div");
-        optInner.className = "option-wrap";
+    if(page.options&&Object.keys(page.options).length>0){
+        const fixedOptWrap=document.createElement("div");
+        fixedOptWrap.className="option-fixed-wrap";
+        const pos=page.optionPos?{...CONFIG.defaultOptionPos,...page.optionPos}:{...CONFIG.defaultOptionPos};
+        if(pos.top!==null)fixedOptWrap.style.top=pos.top;else fixedOptWrap.style.top="";
+        if(pos.bottom!==null)fixedOptWrap.style.bottom=pos.bottom;else fixedOptWrap.style.bottom="";
+        if(pos.left!==null)fixedOptWrap.style.left=pos.left;else fixedOptWrap.style.left="";
+        if(pos.right!==null)fixedOptWrap.style.right=pos.right;else fixedOptWrap.style.right="";
+        if(pos.transform!==null)fixedOptWrap.style.transform=pos.transform;else fixedOptWrap.style.transform="";
+        const optInner=document.createElement("div");
+        optInner.className="option-wrap";
         fixedOptWrap.appendChild(optInner);
-        for (const label in page.options) {
-            const btn = document.createElement("button");
-            btn.className = "option-btn";
-            btn.innerText = label;
-            const optVal = page.options[label];
-            btn.onclick = ev => {
+        for(const label in page.options){
+            const btn=document.createElement("button");
+            btn.className="option-btn";
+            btn.innerText=label;
+            const optVal=page.options[label];
+            btn.onclick=ev=>{
                 initAudio();
                 ev.stopPropagation();
-                let targetPage = Array.isArray(optVal) ? resolveBranch(optVal) : optVal;
-                if (targetPage) renderPage(targetPage,0);
+                let targetPage=Array.isArray(optVal)?resolveBranch(optVal):optVal;
+                if(targetPage)renderPage(targetPage,0);
             };
             optInner.appendChild(btn);
         }
         root.appendChild(fixedOptWrap);
     }
-
-    // 淡出黑场
     if(fadeElement){
         fadeElement.classList.remove("in");
-        await sleepMs(CONFIG.fadeTransitionMs, new AbortController().signal);
+        await sleepMs(CONFIG.fadeTransitionMs,new AbortController().signal);
         fadeElement.remove();
     }
-
-    root.onclick = async e => {
+    root.onclick=async e=>{
         initAudio();
-        if (e.target.classList.contains("option-btn")) return;
-        if (isTyping && textDom) { skipTyping(textDom, fullText); return; }
-        if (page.options && Object.keys(page.options).length > 0) return;
-        if (!typingFinished) return;
-        if(currentPageLineIndex + 1 < pageLineItems.length){
-            currentPageLineIndex +=1;
-            await renderCurrentLine(root, pageLineItems[currentPageLineIndex], root.querySelector(".dialog-name"), textDom);
+        if(e.target.classList.contains("option-btn"))return;
+        if(isTyping&&textDom){skipTyping(textDom,fullText);return;}
+        if(page.options&&Object.keys(page.options).length>0)return;
+        if(!typingFinished)return;
+        if(currentPageLineIndex+1<pageLineItems.length){
+            currentPageLineIndex+=1;
+            await renderCurrentLine(root,pageLineItems[currentPageLineIndex],root.querySelector(".dialog-name"),textDom);
             return;
         }
-        let nextId = null;
-        if (page.nextConditional && Array.isArray(page.nextConditional) && page.nextConditional.length > 0) {
-            nextId = resolveBranch(page.nextConditional);
+        let nextId=null;
+        if(page.nextConditional&&Array.isArray(page.nextConditional)&&page.nextConditional.length>0){
+            nextId=resolveBranch(page.nextConditional);
         }
-        if (nextId) renderPage(nextId,0);
+        if(nextId)renderPage(nextId,0);
     };
 }
-async function renderCurrentLine(root, lineItem, nameEl, textDom){
-    typingFinished = false;
-    isTyping = false;
-    nameEl.innerText = lineItem.speaker ?? "";
-    const fullText = lineItem.dialog ?? "";
-    if(lineItem.charImgs){
-        await updateCharLayer(root, lineItem.charImgs);
-    }
-    await typeWrite(textDom, fullText);
+async function renderCurrentLine(root,lineItem,nameEl,textDom){
+    typingFinished=false;
+    isTyping=false;
+    nameEl.innerText=lineItem.speaker??"";
+    const fullText=lineItem.dialog??"";
+    if(lineItem.charImgs)await updateCharLayer(root,lineItem.charImgs);
+    await typeWrite(textDom,fullText);
 }
-async function preloadImages() {
-    const tipEl = document.getElementById("preloadTip");
-    const textEl = document.getElementById("preloadText");
-    const progressEl = document.getElementById("preloadProgress");
+async function preloadImages(){
+    const tipEl=document.getElementById("preloadTip");
+    const textEl=document.getElementById("preloadText");
+    const progressEl=document.getElementById("preloadProgress");
     tipEl.classList.remove("hidden");
-    textEl.innerText = `资源加载中`;
-    progressEl.innerText = ``;
-    const urls = new Set();
-    for (const page of PAGES) {
-        const realBg = resolveImgAlias(page.bg);
-        if (realBg && realBg !== "none") urls.add(realBg);
-        if (Array.isArray(page.charImgs)) {
-            for (const u of page.charImgs) { urls.add(resolveImgAlias(u)); }
-        }
+    textEl.innerText=`资源加载中`;
+    progressEl.innerText=``;
+    const urls=new Set();
+    for(const page of PAGES){
+        const realBg=resolveImgAlias(page.bg);
+        if(realBg&&realBg!=="none")urls.add(realBg);
+        if(Array.isArray(page.charImgs))for(const u of page.charImgs)urls.add(resolveImgAlias(u));
         if(Array.isArray(page.lines)){
             for(const line of page.lines){
-                if(Array.isArray(line.charImgs)){
-                    for(const u of line.charImgs){ urls.add(resolveImgAlias(u)); }
-                }
+                if(Array.isArray(line.charImgs))for(const u of line.charImgs)urls.add(resolveImgAlias(u));
             }
         }
     }
-    const list = Array.from(urls);
-    if (!list.length) {
-        textEl.innerText = "资源加载完成";
-        await sleepMs(300, new AbortController().signal);
+    const list=Array.from(urls);
+    if(!list.length){
+        textEl.innerText="资源加载完成";
+        await sleepMs(300,new AbortController().signal);
         tipEl.classList.add("hidden");
         return;
     }
-    let loadedCount = 0;
-    let failCount = 0;
-    textEl.innerText = `资源加载 0/${list.length}`;
-    const loadOne = (src) => {
-        return new Promise((resolve) => {
-            let timer = null;
-            const img = new Image();
-            preloadedImageMap.set(src, img);
-            const done = (ok) => {
-                clearTimeout(timer);
-                loadedCount++;
-                if(!ok) failCount++;
-                const pct = Math.floor((loadedCount / list.length) * 100);
-                textEl.innerText = `资源加载 ${loadedCount}/${list.length} (${pct}%)`;
-                progressEl.innerText = `${pct}%`;
-                resolve({ src, ok });
-            };
-            timer = setTimeout(()=>{console.warn(`[预加载超时] ${src}`); done(false);}, CONFIG.preloadTimeoutMs);
-            img.onload = ()=> done(true);
-            img.onerror = ()=>{console.warn(`[预加载失败] ${src}`); done(false);};
-            img.src = src;
-        })
-    };
-    const results = await Promise.all(list.map(s => loadOne(s)));
-    const failList = results.filter(r=>!r.ok).map(r=>r.src);
+    let loadedCount=0;
+    let failCount=0;
+    textEl.innerText=`资源加载 0/${list.length}`;
+    const loadOne=(src)=>new Promise(resolve=>{
+        let timer=null;
+        const img=new Image();
+        preloadedImageMap.set(src,img);
+        const done=(ok)=>{
+            clearTimeout(timer);
+            loadedCount++;
+            if(!ok)failCount++;
+            const pct=Math.floor((loadedCount/list.length)*100);
+            textEl.innerText=`资源加载 ${loadedCount}/${list.length} (${pct}%)`;
+            progressEl.innerText=`${pct}%`;
+            resolve({src,ok});
+        };
+        timer=setTimeout(()=>{console.warn(`[预加载超时] ${src}`);done(false);},CONFIG.preloadTimeoutMs);
+        img.onload=()=>done(true);
+        img.onerror=()=>{console.warn(`[预加载失败] ${src}`);done(false);};
+        img.src=src;
+    });
+    const results=await Promise.all(list.map(s=>loadOne(s)));
+    const failList=results.filter(r=>!r.ok).map(r=>r.src);
     if(failList.length>0){
-        console.error("部分图片加载失败：", failList);
-        textEl.innerText = `加载完成，${failList.length}项资源异常`;
-    }else{
-        textEl.innerText = "全部资源加载完成";
-    }
-    await sleepMs(400, new AbortController().signal);
+        console.error("部分图片加载失败：",failList);
+        textEl.innerText=`加载完成，${failList.length}项资源异常`;
+    }else textEl.innerText="全部资源加载完成";
+    await sleepMs(400,new AbortController().signal);
     tipEl.classList.add("hidden");
 }
-// === Unit启动逻辑 ===
-const unitListWrap = document.getElementById("unitListWrap");
-const unitLauncher = document.getElementById("unit-launcher");
-const novelRoot = document.getElementById("novel-root");
-const saveMenuBtn = document.getElementById("saveMenuBtn");
-const saveModalMask = document.getElementById("saveModalMask");
-const closeSaveModal = document.getElementById("closeSaveModal");
-const preloadTip = document.getElementById("preloadTip");
-/**
- * 读取某个unit: /units/{unitFolderName}/story.json
- */
+const unitListWrap=document.getElementById("unitListWrap");
+const unitLauncher=document.getElementById("unit-launcher");
+const novelRoot=document.getElementById("novel-root");
+const saveMenuBtn=document.getElementById("saveMenuBtn");
+const saveModalMask=document.getElementById("saveModalMask");
+const closeSaveModal=document.getElementById("closeSaveModal");
+const preloadTip=document.getElementById("preloadTip");
 async function loadUnit(unitFolderName){
     try{
         preloadTip.classList.remove("hidden");
-        document.getElementById("preloadText").innerText = `正在读取剧本：${unitFolderName}`;
-        currentUnitId = unitFolderName;
-        const resp = await fetch(`./units/${unitFolderName}/story.json`);
-        if(!resp.ok){
-            throw new Error(`无法读取文件，HTTP状态:${resp.status}，检查路径 units/${unitFolderName}/story.json`);
-        }
-        const data = await resp.json();
-        IMG_ALIAS = data.IMG_ALIAS ?? {};
-        IMG_FALLBACK = data.IMG_FALLBACK ?? "";
-        PAGES = data.PAGES;
-        if(!Array.isArray(PAGES) || PAGES.length===0){
-            throw new Error("story.json中PAGES为空或格式错误");
-        }
-        // 切换界面：隐藏选择器，显示游戏
-        unitLauncher.style.display = "none";
-        novelRoot.style.display = "block";
-        saveMenuBtn.style.display = "block";
+        document.getElementById("preloadText").innerText=`正在读取剧本：${unitFolderName}`;
+        currentUnitId=unitFolderName;
+        const resp=await fetch(`./units/${unitFolderName}/story.json`);
+        if(!resp.ok)throw new Error(`无法读取文件，HTTP状态:${resp.status}，检查路径 units/${unitFolderName}/story.json`);
+        const data=await resp.json();
+        IMG_ALIAS=data.IMG_ALIAS??{};
+        IMG_FALLBACK=data.IMG_FALLBACK??"";
+        PAGES=data.PAGES;
+        if(!Array.isArray(PAGES)||PAGES.length===0)throw new Error("story.json中PAGES为空或格式错误");
+        unitLauncher.style.display="none";
+        novelRoot.style.display="block";
+        saveMenuBtn.style.display="block";
         checkOrientation();
         preloadedImageMap.clear();
         await preloadImages();
-        // 读取该unit存档
-        const slots = getAllSlots();
-        const firstSlot = slots[0];
-        if(firstSlot && getPageById(firstSlot.currentPageName)){
-            currentPageName = firstSlot.currentPageName;
-            globalVars = {...firstSlot.globalVars};
-            currentPageLineIndex = firstSlot.pageLineIndex ?? 0;
+        const slots=getAllSlots();
+        const firstSlot=slots[0];
+        if(firstSlot&&getPageById(firstSlot.currentPageName)){
+            currentPageName=firstSlot.currentPageName;
+            globalVars={...firstSlot.globalVars};
+            currentPageLineIndex=firstSlot.pageLineIndex??0;
         }else{
-            currentPageName = PAGES[0].page_name;
-            currentPageLineIndex = 0;
-            globalVars = {};
+            currentPageName=PAGES[0].page_name;
+            currentPageLineIndex=0;
+            globalVars={};
         }
-        await renderPage(currentPageName, currentPageLineIndex);
+        await renderPage(currentPageName,currentPageLineIndex);
     }catch(err){
         preloadTip.classList.add("hidden");
         alert(`剧本加载失败：\n${err.message}\n\n请确认：\n1. 使用Live Server打开网页\n2. units/unit‑manifest.json配置正确\n3. 剧本文件夹内story.json存在且JSON格式合法`);
         console.error(err);
     }
 }
-// 事件委托处理剧本列表按钮（修复动态onclick绑定失效）
-unitListWrap.addEventListener("click", async (e)=>{
-    const btn = e.target.closest(".unit-item-btn");
-    if(!btn) return;
+unitListWrap.addEventListener("click",async e=>{
+    const btn=e.target.closest(".unit-item-btn");
+    if(!btn)return;
     initAudio();
-    const unitName = btn.dataset.unit;
+    const unitName=btn.dataset.unit;
     await loadUnit(unitName);
 });
-// 读取清单，渲染剧本按钮
 async function bootLauncher(){
     try{
-        const manifestResp = await fetch("./units/unit-manifest.json");
-        if(!manifestResp.ok) throw new Error("读取unit‑manifest.json失败");
-        const manifest = await manifestResp.json();
-        const unitNames = manifest.units || [];
-        unitListWrap.innerHTML = "";
-        if(unitNames.length === 0){
-            unitListWrap.innerHTML = `<div style="color:#aaa">未探测到剧本单元，请检查 units/unit‑manifest.json</div>`;
+        const manifestResp=await fetch("./units/unit-manifest.json");
+        if(!manifestResp.ok)throw new Error("读取unit‑manifest.json失败");
+        const manifest=await manifestResp.json();
+        const unitNames=manifest.units||[];
+        unitListWrap.innerHTML="";
+        if(unitNames.length===0){
+            unitListWrap.innerHTML=`<div style="color:#aaa">未探测到剧本单元，请检查 units/unit‑manifest.json</div>`;
             return;
         }
         for(const name of unitNames){
-            const btn = document.createElement("button");
-            btn.className = "unit-item-btn";
-            btn.innerText = name;
-            btn.dataset.unit = name;
+            const btn=document.createElement("button");
+            btn.className="unit-item-btn";
+            btn.innerText=name;
+            btn.dataset.unit=name;
             unitListWrap.appendChild(btn);
         }
-        // 交错入场动画
-        const btns = Array.from(unitListWrap.querySelectorAll(".unit-item-btn"));
-        btns.forEach((b,idx)=>{
-            setTimeout(()=>{
-                b.classList.add("animate-in");
-            }, idx * 120);
-        });
+        const btns=Array.from(unitListWrap.querySelectorAll(".unit-item-btn"));
+        btns.forEach((b,idx)=>setTimeout(()=>b.classList.add("animate-in"),idx*120));
     }catch(err){
-        unitListWrap.innerHTML = `<div style="color:#ff8888">无法读取 units/unit‑manifest.json<br>请使用Live Server运行，禁止直接双击打开本地html<br>错误信息:${err.message}</div>`;
+        unitListWrap.innerHTML=`<div style="color:#ff8888">无法读取 units/unit‑manifest.json<br>请使用Live Server运行，禁止直接双击打开本地html<br>错误信息:${err.message}</div>`;
         console.error(err);
     }
-    saveMenuBtn.onclick = ()=>{
-        initAudio();
-        renderSaveModal();
-        saveModalMask.classList.add("show");
-    };
-    closeSaveModal.onclick = ()=>{
-        saveModalMask.classList.remove("show");
-    };
-    saveModalMask.onclick=(e)=>{
-        if(e.target===saveModalMask){
-            saveModalMask.classList.remove("show");
-        }
-    };
+    saveMenuBtn.onclick=()=>{initAudio();renderSaveModal();saveModalMask.classList.add("show");};
+    closeSaveModal.onclick=()=>saveModalMask.classList.remove("show");
+    saveModalMask.onclick=e=>{if(e.target===saveModalMask)saveModalMask.classList.remove("show");};
 }
-window.addEventListener("load", async () => {
-    await bootLauncher();
-});
+window.addEventListener("load",async ()=>await bootLauncher());
 </script>
 </body>
 </html>
