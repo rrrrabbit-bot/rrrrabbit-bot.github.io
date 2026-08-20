@@ -167,14 +167,15 @@
     background: rgba(0, 0, 0, 0);
     /* 替换原来 border:2px solid #fff; border-image: url('') 2 stretch; */
     border:11px solid transparent;
-    border-image: url("./ui/border_32.png") 11 / 22px stretch;
+    border-image: url("./ui/border_32.png") 11 fill / 18px stretch;
     border-image-repeat: stretch;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
     border-radius: 0;
     padding: 16px 20px;
     z-index: 4;
-    transition: height 0.28s ease-out, bottom 0.28s ease-out;
+    max-height: 800px; /* 设置比对话框最大高度更大的值 */
+    transition: max-height 0.28s ease-out, bottom 0.28s ease-out;
     height: auto;
 }
         .dialog-name {
