@@ -21,6 +21,24 @@
             color: #ffffff;
             background:#000;
         }
+        @font-face {
+            font-family: "big"; /* 这个名字自己随便起，后面要用 */
+            src: url("fonts/minecraft.ttf") format("ttf");
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: "middle"; /* 这个名字自己随便起，后面要用 */
+            src: url("fonts/HYPixel11pxU-2.ttf") format("ttf");
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: "small"; /* 这个名字自己随便起，后面要用 */
+            src: url("fonts/HYPixel9pxU-2.ttf") format("ttf");
+            font-weight: normal;
+            font-style: normal;
+        }
         .rotate-warning {
             position: fixed;
             inset: 0;
@@ -179,6 +197,7 @@
     height: auto;
 }
         .dialog-name {
+            font-family: "big", sans-serif;
             font-size: 24px;
             margin-bottom: 8px;
             margin-left:-10px;
@@ -188,6 +207,7 @@
         .dialog-content {
             font-size: 20px;
             line-height: 1.5;
+            font-family: "middle", sans-serif;
         }
         .option-fixed-wrap {
             position: absolute;
@@ -204,7 +224,7 @@
             border: 2px solid #fff;
             border-image: url('') 2 stretch;
             color: #fff;
-            font-family: inherit;
+            font-family: "middle", sans-serif;
             font-size: 22px;
             padding: 10px;
             border-radius: 0;
@@ -225,7 +245,7 @@
             border: 2px solid #77ddff;
             border-image: url('') 2 stretch;
             color: #77ddff;
-            font-family: inherit;
+            font-family: "small", sans-serif;
             font-size: 14px;
             padding: 8px 12px;
             border-radius: 0;
