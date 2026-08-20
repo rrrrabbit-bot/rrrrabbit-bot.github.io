@@ -21,6 +21,20 @@
             color: #ffffff;
             background:#000;
         }
+        /* 页面转场黑遮罩 */
+        .page-transition-mask{
+            position:fixed;
+            inset:0;
+            background:#000;
+            z-index:9999;
+            pointer-events:none;
+            opacity:0;
+            transition:opacity 0.35s ease-in-out;
+        }
+        .page-transition-mask.active{
+            pointer-events:auto;
+            opacity:1;
+        }
         .rotate-warning {
             position: fixed;
             inset: 0;
@@ -36,7 +50,6 @@
         .rotate-warning.show {
             display: flex;
         }
-
         /* === Unit选择启动界面 === */
         #unit-launcher{
             position:fixed;
@@ -52,6 +65,9 @@
         #unit-launcher h2{
             font-size:32px;
             margin-bottom:2rem;
+            opacity:0;
+            transform: translateY(20px);
+            animation: unitLaunchFadeIn 0.4s ease-out forwards;
         }
         .unit-list{
             display:flex;
@@ -61,24 +77,44 @@
         }
         .unit-item-btn{
             width:100%;
-            background:transparent;
-            border:2px solid #fff;
+            background:rgba(255,255,255,0.04);
+            border:none;
+            border-left:4px solid #ffffff;
             color:#fff;
             font-family:inherit;
             font-size:22px;
-            padding:14px;
+            padding:14px 16px;
             cursor:pointer;
-            background:rgba(255,255,255,0.04);
+            opacity:0;
+            transform: translateY(24px);
+            animation: unitItemStaggerIn 0.45s ease-out forwards;
         }
+        .unit-item-btn:nth-child(1){animation-delay:0.10s;}
+        .unit-item-btn:nth-child(2){animation-delay:0.20s;}
+        .unit-item-btn:nth-child(3){animation-delay:0.30s;}
+        .unit-item-btn:nth-child(4){animation-delay:0.38s;}
+        .unit-item-btn:nth-child(5){animation-delay:0.44s;}
+
+        @keyframes unitLaunchFadeIn{
+            to{opacity:1;transform:translateY(0);}
+        }
+        @keyframes unitItemStaggerIn{
+            to{opacity:1;transform:translateY(0);}
+        }
+
         .unit-item-btn:hover{
-            background:#fff;
-            color:#000;
+            background:rgba(255,255,255,0.12);
+            border-left-color:#ffdd77;
         }
         .launch-tip{
             margin-top:24px;
             color:#aaa;
             font-size:16px;
             text-align:center;
+            opacity:0;
+            transform: translateY(16px);
+            animation: unitLaunchFadeIn 0.4s ease-out forwards;
+            animation-delay:0.5s;
         }
         #novel-root {
             width: 100%;
@@ -115,9 +151,9 @@
             image-rendering: pixelated;
             image-rendering: crisp-edges;
             opacity: 0;
-            transform: translateY(0px);
-            transition: opacity 0.15s ease‑out;
-            will‑change: opacity;
+            transform: translateY(30px);
+            transition: opacity 0.32s ease‑out, transform 0.32s ease‑out;
+            will‑change: opacity, transform;
         }
         .char-img.visible {
             opacity: 1;
@@ -143,9 +179,10 @@
             left: 50%;
             transform: translateX(-50%);
             width: min(90vw, 900px);
-            background: rgba(0, 0, 0, 0.85);
-            border: 2px solid #fff;
-            border-radius: 0;
+            background: rgba(0, 0, 0, 0.82);
+            border: 1px solid rgba(255,255,255,0.25);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.08);
+            border-radius: 2px;
             padding: 16px 20px;
             z-index: 4;
             transition: height 0.28s ease-out, bottom 0.28s ease-out;
@@ -168,39 +205,39 @@
         .option-wrap {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
         .option-btn {
-            background: transparent;
-            border: 2px solid #fff;
+            background: rgba(0,0,0,0.60);
+            border: 1px solid rgba(255,255,255,0.30);
             color: #fff;
             font-family: inherit;
             font-size: 22px;
-            padding: 10px;
-            border-radius: 0;
+            padding: 12px 14px;
+            border-radius: 2px;
             cursor: pointer;
-            background: rgba(0, 0, 0, 0.65);
-            transition: transform 0.32s ease-out;
+            transition: transform 0.24s ease-out, background 0.24s ease-out, border-color 0.24s ease-out;
         }
         .option-btn:hover {
-            background: #ffffff;
-            color: #000;
-            transition: transform 0.32s ease-out;
+            background: rgba(255,255,255,0.14);
+            border-color:#ffdd77;
+            transform: translateY(-2px);
         }
         #saveMenuBtn {
             position: fixed;
             top: 12px;
             left: 12px;
-            background: transparent;
-            border: 2px solid #77ddff;
+            background: rgba(0,0,0,0.45);
+            border:1px solid #77ddff;
             color: #77ddff;
             font-family: inherit;
             font-size: 14px;
             padding: 8px 12px;
-            border-radius: 0;
+            border-radius: 2px;
             cursor: pointer;
             z-index: 99999;
             display:none;
+            transition: background 0.22s;
         }
         #saveMenuBtn:hover {
             background: #77ddff;
@@ -243,11 +280,11 @@
         .save-modal{
             width:min(92vw,520px);
             background:#000;
-            border:2px solid #fff;
+            border:1px solid rgba(255,255,255,0.3);
             padding:20px;
             max-height:85vh;
             overflow-y:auto;
-            transform: scale(1);
+            transform: scale(0.92);
             transition: transform 0.32s ease-out;
         }
         .save-modal-mask.show .save-modal{
@@ -259,9 +296,10 @@
             font-size:22px;
         }
         .save-slot-item{
-            border:1px solid #666;
+            border:1px solid #444;
             padding:14px;
             margin-bottom:12px;
+            border-radius:2px;
         }
         .slot-empty{
             color:#888;
@@ -288,16 +326,19 @@
         }
         .slot-btn{
             background:transparent;
-            border:1px solid #fff;
+            border:1px solid rgba(255,255,255,0.35);
             color:#fff;
             font-family:inherit;
             font-size:14px;
             padding:6px 10px;
             cursor:pointer;
+            border-radius:2px;
+            transition:background 0.22s,border-color 0.22s;
         }
         .slot-btn:hover{
-            background:#fff;
-            color:#000;
+            background:rgba(255,255,255,0.12);
+            border-color:#fff;
+            color:#fff;
         }
         .slot-btn.del{
             border-color:#ff5555;
@@ -330,8 +371,9 @@
         .custom-dialog-box {
             width: min(90vw,420px);
             background:#000;
-            border:2px solid #fff;
+            border:1px solid rgba(255,255,255,0.3);
             padding:20px;
+            border-radius:2px;
             transform: scale(0.92);
             transition: transform 0.32s ease-out;
         }
@@ -346,12 +388,13 @@
             width:100%;
             background:#111;
             color:#fff;
-            border:1px solid #fff;
+            border:1px solid rgba(255,255,255,0.35);
             font-family:inherit;
             font-size:18px;
             padding:10px;
             margin-bottom:16px;
             outline:none;
+            border-radius:2px;
         }
         .custom-dialog-buttons {
             display:flex;
@@ -360,7 +403,7 @@
         }
         .custom-dialog-btn {
             background:transparent;
-            border:1px solid #fff;
+            border:1px solid rgba(255,255,255,0.35);
             color:#fff;
             font-family:inherit;
             font-size:16px;
@@ -368,10 +411,11 @@
             cursor:pointer;
             min-height:44px;
             min-width:80px;
+            border-radius:2px;
+            transition:background 0.22s;
         }
         .custom-dialog-btn:hover {
-            background:#fff;
-            color:#000;
+            background:rgba(255,255,255,0.12);
         }
         /* 全局加载遮罩 */
         #preloadTip {
@@ -392,22 +436,20 @@
     </style>
 </head>
 <body>
+    <div class="page-transition-mask" id="pageTransitionMask"></div>
     <div id="preloadTip" class="hidden">
         <div id="preloadText">资源加载中…</div>
         <div id="preloadProgress"></div>
     </div>
-
     <!-- Unit剧本选择启动页 -->
     <div id="unit-launcher">
         <h2>选择剧本单元</h2>
         <div class="unit-list" id="unitListWrap"></div>
         <div class="launch-tip">请使用Web服务器运行（Live Server）<br>将剧本放入 units/[文件夹名]/story.json</div>
     </div>
-
     <div class="rotate-warning" id="rotateWarning">请使用移动端竖屏</div>
     <button id="saveMenuBtn">存档</button>
     <div id="novel-root"></div>
-
     <div class="custom-dialog-mask" id="customDialogMask">
         <div class="custom-dialog-box">
             <div class="custom-dialog-message" id="customDialogMsg"></div>
@@ -418,7 +460,6 @@
             </div>
         </div>
     </div>
-
     <div class="save-modal-mask" id="saveModalMask">
         <div class="save-modal">
             <h3>存档槽位</h3>
@@ -428,7 +469,6 @@
             </div>
         </div>
     </div>
-
 <script>
 const CONFIG = {
     typingSpeed: 60,
@@ -438,6 +478,7 @@ const CONFIG = {
     buttonToneVolume: 0.12,
     slotCount:3,
     preloadTimeoutMs: 10000,
+    transitionDurationMs:350,
     defaultOptionPos:{
         top:null,
         bottom:"220px",
@@ -446,12 +487,32 @@ const CONFIG = {
         transform:"translateX(-50%)"
     }
 };
-
 // 当前加载的unit标识，用来隔离localStorage存档
 let currentUnitId = null;
 let IMG_ALIAS = {};
 let IMG_FALLBACK = "";
 let PAGES = [];
+const pageTransitionMask = document.getElementById("pageTransitionMask");
+
+/**
+ * 页面黑场转场
+ */
+async function pageFadeTransition(){
+    return new Promise(resolve=>{
+        pageTransitionMask.classList.add("active");
+        setTimeout(()=>{
+            resolve();
+        },CONFIG.transitionDurationMs);
+    })
+}
+async function pageFadeTransitionOut(){
+    return new Promise(resolve=>{
+        pageTransitionMask.classList.remove("active");
+        setTimeout(()=>{
+            resolve();
+        },CONFIG.transitionDurationMs);
+    })
+}
 
 /**
  * 解析图片别名
@@ -466,9 +527,7 @@ function resolveImgAlias(str){
     }
     return str;
 }
-
 const preloadedImageMap = new Map();
-
 // 按钮音效
 function playButtonBeep(){
     if (!audioCtx) return;
@@ -483,7 +542,6 @@ function playButtonBeep(){
     osc.start();
     osc.stop(audioCtx.currentTime + 0.025);
 }
-
 document.addEventListener('click',(e)=>{
     const target = e.target;
     if(target.tagName === 'BUTTON'){
@@ -498,7 +556,6 @@ document.addEventListener('touchend',(e)=>{
         playButtonBeep();
     }
 },{passive:false});
-
 // ====自定义弹窗工具====
 const customDialogMask = document.getElementById("customDialogMask");
 const customDialogMsg = document.getElementById("customDialogMsg");
@@ -507,7 +564,6 @@ const customDialogOk = document.getElementById("customDialogOk");
 const customDialogCancel = document.getElementById("customDialogCancel");
 let customDialogResolve = null;
 let customDialogIsOpen = false;
-
 function closeCustomDialog(){
     customDialogMask.classList.remove("show");
     customDialogIsOpen = false;
@@ -564,17 +620,14 @@ document.addEventListener("keydown",(e)=>{
     if(e.key === "Escape") handleDialogCancel();
     if(e.key === "Enter") handleDialogOk();
 });
-
 let audioCtx = null;
 let typeAbortController = null;
 let bgmAudio = null;
 let bgmPollTimer = null;
-
 // 存档key 按unit隔离
 function getSaveKey(){
     return "vn_save_slots__"+currentUnitId;
 }
-
 function getAllSlots(){
     const raw = localStorage.getItem(getSaveKey());
     if(!raw) return Array(CONFIG.slotCount).fill(null);
@@ -692,7 +745,6 @@ function renderSaveModal(){
         }
     });
 }
-
 function initAudio() {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -718,7 +770,6 @@ function sleepMs(ms, signal) {
         signal.addEventListener('abort', () => {clearTimeout(timer);resolve();});
     });
 }
-
 const rotateWarningEl = document.getElementById("rotateWarning");
 function checkOrientation(){
     const isPortrait = (window.innerHeight > window.innerWidth);
@@ -730,7 +781,6 @@ function checkOrientation(){
 }
 window.addEventListener("resize", checkOrientation);
 window.addEventListener("orientationchange", checkOrientation);
-
 function stopBGM() {
     if(bgmPollTimer){ clearInterval(bgmPollTimer); bgmPollTimer = null; }
     if (bgmAudio) {
@@ -758,7 +808,6 @@ async function startBGM(url) {
     },200);
     await bgmAudio.play().catch(err => console.log("BGM需要交互"));
 }
-
 function evalCondition(cond) {
     const v = globalVars[cond.var] ?? "";
     if (cond.eq !== undefined) return v === cond.eq;
@@ -814,19 +863,18 @@ async function updateCharLayer(root, charImgsArr){
         img.classList.add("visible");
     }
 }
-
 let globalVars = {};
 let currentPageName = "";
 let currentPageLineIndex = 0;
 let typingFinished = false;
 let isTyping = false;
 let pageLineItems = [];
-
 function getPageById(pageName) {
     return PAGES.find(p => p.page_name === pageName);
 }
-
 async function renderPage(pageName, startLineIdx=0) {
+    await pageFadeTransition();
+
     if(typeAbortController) typeAbortController.abort();
     isTyping = false;
     typingFinished = false;
@@ -834,7 +882,6 @@ async function renderPage(pageName, startLineIdx=0) {
     if (!page) throw new Error("找不到页面：" + pageName);
     currentPageName = pageName;
     currentPageLineIndex = startLineIdx;
-
     if(page.lines && Array.isArray(page.lines)){
         pageLineItems = page.lines;
     }else{
@@ -844,7 +891,6 @@ async function renderPage(pageName, startLineIdx=0) {
             charImgs: page.charImgs
         }];
     }
-
     const root = document.getElementById("novel-root");
     root.innerHTML = "";
     root.className = "";
@@ -855,7 +901,6 @@ async function renderPage(pageName, startLineIdx=0) {
     }
     if (page.music_stop === true) stopBGM();
     if (page.music_start) await startBGM(page.music_start);
-
     const bgDiv = document.createElement("div");
     bgDiv.className = "bg-layer";
     const realBgUrl = resolveImgAlias(page.bg);
@@ -865,7 +910,6 @@ async function renderPage(pageName, startLineIdx=0) {
         bgDiv.style.backgroundColor = "#000";
     }
     root.appendChild(bgDiv);
-
     let textDom = null;
     let fullText = "";
     if(page.type === "text"){
@@ -889,7 +933,6 @@ async function renderPage(pageName, startLineIdx=0) {
         root.appendChild(dBox);
         await renderCurrentLine(root, pageLineItems[currentPageLineIndex], nameEl, textDom);
     }
-
     if (page.options && Object.keys(page.options).length > 0) {
         const fixedOptWrap = document.createElement("div");
         fixedOptWrap.className = "option-fixed-wrap";
@@ -917,7 +960,6 @@ async function renderPage(pageName, startLineIdx=0) {
         }
         root.appendChild(fixedOptWrap);
     }
-
     root.onclick = async e => {
         initAudio();
         if (e.target.classList.contains("option-btn")) return;
@@ -935,6 +977,7 @@ async function renderPage(pageName, startLineIdx=0) {
         }
         if (nextId) renderPage(nextId,0);
     };
+    await pageFadeTransitionOut();
 }
 async function renderCurrentLine(root, lineItem, nameEl, textDom){
     typingFinished = false;
@@ -946,7 +989,6 @@ async function renderCurrentLine(root, lineItem, nameEl, textDom){
     }
     await typeWrite(textDom, fullText);
 }
-
 async function preloadImages() {
     const tipEl = document.getElementById("preloadTip");
     const textEl = document.getElementById("preloadText");
@@ -1010,7 +1052,6 @@ async function preloadImages() {
     await sleepMs(400, new AbortController().signal);
     tipEl.classList.add("hidden");
 }
-
 // === Unit启动逻辑 ===
 const unitListWrap = document.getElementById("unitListWrap");
 const unitLauncher = document.getElementById("unit-launcher");
@@ -1019,7 +1060,6 @@ const saveMenuBtn = document.getElementById("saveMenuBtn");
 const saveModalMask = document.getElementById("saveModalMask");
 const closeSaveModal = document.getElementById("closeSaveModal");
 const preloadTip = document.getElementById("preloadTip");
-
 /**
  * 读取某个unit: /units/{unitFolderName}/story.json
  */
@@ -1043,11 +1083,9 @@ async function loadUnit(unitFolderName){
         unitLauncher.style.display = "none";
         novelRoot.style.display = "block";
         saveMenuBtn.style.display = "block";
-
         checkOrientation();
         preloadedImageMap.clear();
         await preloadImages();
-
         // 读取该unit存档
         const slots = getAllSlots();
         const firstSlot = slots[0];
@@ -1067,7 +1105,6 @@ async function loadUnit(unitFolderName){
         console.error(err);
     }
 }
-
 // 事件委托处理剧本列表按钮（修复动态onclick绑定失效）
 unitListWrap.addEventListener("click", async (e)=>{
     const btn = e.target.closest(".unit-item-btn");
@@ -1076,7 +1113,6 @@ unitListWrap.addEventListener("click", async (e)=>{
     const unitName = btn.dataset.unit;
     await loadUnit(unitName);
 });
-
 // 读取清单，渲染剧本按钮
 async function bootLauncher(){
     try{
@@ -1097,10 +1133,9 @@ async function bootLauncher(){
             unitListWrap.appendChild(btn);
         }
     }catch(err){
-        unitListWrap.innerHTML = `<div style="color:#ff88888">无法读取 units/unit‑manifest.json<br>请使用Live Server运行，禁止直接双击打开本地html<br>错误信息:${err.message}</div>`;
+        unitListWrap.innerHTML = `<div style="color:#ff8888">无法读取 units/unit‑manifest.json<br>请使用Live Server运行，禁止直接双击打开本地html<br>错误信息:${err.message}</div>`;
         console.error(err);
     }
-
     saveMenuBtn.onclick = ()=>{
         initAudio();
         renderSaveModal();
@@ -1115,7 +1150,6 @@ async function bootLauncher(){
         }
     };
 }
-
 window.addEventListener("load", async () => {
     await bootLauncher();
 });
