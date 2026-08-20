@@ -167,8 +167,9 @@
     background: rgba(0, 0, 0, 0.85);
     /* 替换原来 border:2px solid #fff; border-image: url('') 2 stretch; */
     border:11px solid transparent;
-    border-image: url("./ui/border_32.png") 11 / 11px round;
-
+    border-image: url("./ui/border_32.png") 11 / 32px round;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
     border-radius: 0;
     padding: 16px 20px;
     z-index: 4;
