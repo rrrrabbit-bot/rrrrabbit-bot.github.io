@@ -44,6 +44,24 @@ html,body{
   image-rendering:pixelated;
   transform:translate(-50%,-50%);
 }
+.sprite.eye{
+  width:60px;
+  height:auto;
+}
+.sprite.mouth{
+  width:60px;
+  height:auto;
+}
+.sprite.hand{
+  width:80px;
+  height:auto;
+}
+/* 右手镜像外层容器，只做视觉翻转，不改变子元素定位基准 */
+.mirror-wrap{
+  position:absolute;
+  pointer-events:none;
+  transform:translate(-50%,-50%) scaleX(-1);
+}
 /* 玩家圆球 */
 #orb{
   width:26px;height:26px;
@@ -155,7 +173,7 @@ const SENTENCES=[
   "遗忘在空间蔓延",
   "感到孤独",
   "它无处可去",
-  "他她它祂牠",
+  "他她它祂祂",
   "为什么"
 ];
 const TRACK_CHARS = ["寂","忘","空","虚","失","沉"];
@@ -175,9 +193,8 @@ const state={
   lastPhase2SkillTs:0,
   handSlapCooldown:0,
   charJiggleTimer:0,
-  // 贴图真实尺寸
-  eyeW:80,eyeH:80,
-  handW:70,handH:70
+  eyeW:60,eyeH:60,
+  handW:80,handH:80
 };
 const stage=document.getElementById("stage");
 const orb=document.getElementById("orb");
@@ -228,37 +245,42 @@ function tickCharJiggle(root){
 }
 function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
 
-// 贴图辅助，sprite自带中心点transform
+// 贴图辅助
 function makeSprite(src){
   const el=document.createElement("img");
   el.className="sprite";
   el.src=src;
   el.style.opacity="0";
-  stage.appendChild(el);
   return el;
 }
 
-let itGif, eyeGif, mouthGif, handLeftGif, handRightGif;
+let itGif, eyeGif, mouthGif, handLeftGif, handRightGif, handRightWrap;
 function initSprites(){
   itGif=makeSprite("./units/demo01/IT.png");
-  eyeGif=makeSprite("./units/demo01/EYE.png");
-  mouthGif=makeSprite("./units/demo01/MOUTH.png");
-  handLeftGif=makeSprite("./units/demo01/HAND.png");
-  handRightGif=makeSprite("./units/demo01/HAND.png");
-  handRightGif.style.transform="scaleX(-1) translate(-50%,-50%)";
+  stage.appendChild(itGif);
 
-  // 图片加载完成读取贴图尺寸，用于碰撞
-  eyeGif.onload=()=>{
-    state.eyeW=eyeGif.naturalWidth;
-    state.eyeH=eyeGif.naturalHeight;
-  };
-  handLeftGif.onload=()=>{
-    state.handW=handLeftGif.naturalWidth;
-    state.handH=handLeftGif.naturalHeight;
-  };
+  eyeGif=makeSprite("./units/demo01/EYE.png");
+  eyeGif.classList.add("eye");
+  stage.appendChild(eyeGif);
+
+  mouthGif=makeSprite("./units/demo01/MOUTH.png");
+  mouthGif.classList.add("mouth");
+  stage.appendChild(mouthGif);
+
+  handLeftGif=makeSprite("./units/demo01/HAND.png");
+  handLeftGif.classList.add("hand");
+  stage.appendChild(handLeftGif);
+
+  // 右手：外层mirror-wrap做镜像翻转，图片本身保持普通sprite
+  handRightWrap=document.createElement("div");
+  handRightWrap.className="mirror-wrap";
+  handRightGif=makeSprite("./units/demo01/HAND.png");
+  handRightGif.classList.add("hand");
+  handRightWrap.appendChild(handRightGif);
+  stage.appendChild(handRightWrap);
 }
 
-// 【修复】弹幕类，使用隐藏容器测量文字尺寸，不再删除dom
+// 弹幕类，使用隐藏容器测量文字尺寸
 class Bullet{
   constructor(x,y,vx,vy,isWord=false,word="",isTrackChar=false,isReturnRing=false){
     this.x=x;this.y=y;this.vx=vx;this.vy=vy;
@@ -280,7 +302,6 @@ class Bullet{
 
     if(isWord || isTrackChar){
       this.txtWrap=makePixelText(word,18);
-      // 在隐藏容器测量真实宽高
       measureWrap.appendChild(this.txtWrap);
       const rect=this.txtWrap.getBoundingClientRect();
       this.colW=rect.width*0.7;
@@ -376,7 +397,7 @@ class Bullet{
 }
 let bullets=[];
 
-// 嘴巴文字弹幕（仅0-60s）
+// 嘴巴文字弹幕（仅0‑60s）
 async function fireWordBurstLoop(){
   const cx=state.eyeX,cy=state.eyeY;
   const words=["死亡","遗忘","怨恨","孤独","欺骗"];
@@ -512,7 +533,7 @@ async function gameOver(isWin){
   }
 }
 
-// 原版眼圆环弹幕（仅0-60s）
+// 原版眼圆环弹幕（仅0‑60s）
 function fireRingBurst(){
   const elapsed=(performance.now()-state.gameStartTs)/1000;
   if(elapsed >= CONFIG.phaseSwitchSec) return;
@@ -549,7 +570,7 @@ function gameLoop(ts){
 
   if(state.handSlapCooldown>0) state.handSlapCooldown-=16;
 
-  // 手阻挡碰撞：使用贴图真实尺寸
+  // 手阻挡碰撞：使用贴图设置尺寸
   const handBlockR=Math.max(state.handW,state.handH)*0.44;
   if(dist(state.orbX,state.orbY,state.leftHandX,state.leftHandY)<handBlockR){
     const a=Math.atan2(state.orbY-state.leftHandY,state.orbX-state.leftHandX);
@@ -582,7 +603,6 @@ function gameLoop(ts){
   state.eyeX=innerWidth/2;
   state.eyeY=baseEyeY+eyeOff;
 
-  // 赋值位置：sprite已经自带 translate(-50%,‑50%)，直接给中心点
   eyeGif.style.left=state.eyeX+"px";
   eyeGif.style.top=state.eyeY+"px";
   mouthGif.style.left=state.eyeX+"px";
@@ -591,10 +611,12 @@ function gameLoop(ts){
   const handBaseY=innerHeight*0.58;
   state.leftHandY=handBaseY;
   state.rightHandY=handBaseY;
+
   handLeftGif.style.left=state.leftHandX+"px";
   handLeftGif.style.top=(state.leftHandY+handLOff)+"px";
-  handRightGif.style.left=state.rightHandX+"px";
-  handRightGif.style.top=(state.rightHandY+handROff)+"px";
+  // 右手修改：设置外层容器的left/top，图片本身sprite保持translate(-50%,‑50%)
+  handRightWrap.style.left=state.rightHandX+"px";
+  handRightWrap.style.top=(state.rightHandY+handROff)+"px";
 
   // 嘴巴计时（仅0‑60s生效）
   if(state.mouthActive){
@@ -616,7 +638,7 @@ function gameLoop(ts){
     }
   });
 
-  // 眼球本体碰撞，使用贴图尺寸
+  // 眼球本体碰撞
   const eyeHitR=Math.max(state.eyeW,state.eyeH)*0.42;
   if(dist(state.orbX,state.orbY,state.eyeX,state.eyeY)<eyeHitR){
     damage(CONFIG.orbHitEyeDmg);
@@ -643,7 +665,7 @@ function gameLoop(ts){
     state.lastSentenceTime=ts;
     const sent=SENTENCES[randInt(0,SENTENCES.length-1)];
     const tEl=document.createElement("div");
-    tEl.className="top-sentence";
+    tEl.className="pixel-text top-sentence";
     tEl.style.position="absolute";
     tEl.style.left="50%";
     tEl.style.top="70px";
@@ -659,9 +681,10 @@ function gameLoop(ts){
   }
 
   state.charJiggleTimer += 16;
+  //【修复】只在#stage容器内部查询，不再全局document.querySelectorAll，不会污染title
   if(state.charJiggleTimer >= 80){
     state.charJiggleTimer = 0;
-    document.querySelectorAll(".pixel-text").forEach(el=>{
+    stage.querySelectorAll(".pixel-text").forEach(el=>{
       tickCharJiggle(el);
     });
   }
@@ -678,6 +701,8 @@ function startBattle(){
   orb.style.display="none";
   eyeGif.style.opacity="1";
   mouthGif.style.opacity="0";
+  handLeftGif.style.opacity="1";
+  handRightGif.style.opacity="1";
   state.orbX=innerWidth/2;
   state.orbY=innerHeight*0.72;
   state.targetX=state.orbX;
@@ -704,10 +729,12 @@ async function runIntro(){
   initSprites();
   itGif.style.left="50%";
   itGif.style.top="50%";
-  itGif.style.opacity="1";
+  itGif.style.transform="translate(-50%,-50%)";
   itGif.style.transition="opacity 1400ms";
+  itGif.style.opacity="1";
   await sleep(3000);
   const txtIt=document.createElement("div");
+  txtIt.className="pixel-text";
   txtIt.style.position="absolute";
   txtIt.style.left="50%";
   txtIt.style.top="calc(50% - 90px)";
@@ -731,8 +758,8 @@ async function runIntro(){
   eyeGif.style.opacity="1";
   handLeftGif.style.left=innerWidth*0.14;
   handLeftGif.style.top=innerHeight*0.58;
-  handRightGif.style.left=innerWidth*0.86;
-  handRightGif.style.top=innerHeight*0.58;
+  handRightWrap.style.left=innerWidth*0.86;
+  handRightWrap.style.top=innerHeight*0.58;
   handLeftGif.style.transition="opacity 1200ms";
   handLeftGif.style.opacity="1";
   handRightGif.style.transition="opacity 1200ms";
