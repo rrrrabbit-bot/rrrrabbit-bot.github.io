@@ -14,21 +14,11 @@
       "type": "text",
       "bg": "none",
       "effect": "none",
-      "text": "这里什么也没有",
+      "text": "测试",
       "music_start": null,
       "music_stop": true,
       "set_value": {},
-      "optionPos": {
-        "top": null,
-        "bottom": "40px",
-        "left": "50%",
-        "right": null,
-        "transform": "translateX(-50%)"
-      },
-      "options": {
-        "让我看看": "荒原01",
-        "哦哦，那我不看了": "end01"
-      }
+      "gotoExternal":"./battle.html"
     },
     {
       "page_name": "荒原01",
