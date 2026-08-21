@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
-<title>battle</title>
+<title>？</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{
@@ -45,15 +45,15 @@ html,body{
   transform:translate(-50%,-50%);
 }
 .sprite.eye{
-  width:60px;
+  width:120px;
   height:auto;
 }
 .sprite.mouth{
-  width:60px;
+  width:120px;
   height:auto;
 }
 .sprite.hand{
-  width:80px;
+  width:100px;
   height:auto;
 }
 /* 右手镜像外层容器，只做视觉翻转，不改变子元素定位基准 */
@@ -156,7 +156,7 @@ const CONFIG={
   orbEaseFactor:0.065,
   orbEaseMin:0.008,
   charJiggleMag:1.2,
-  charFlickerMin:0.72,
+  charFlickerMin:0,
   charFlickerMax:1,
   singleWordLife:6000,
   returnRingMaxDist:280,
@@ -170,11 +170,11 @@ const CONFIG={
   phase2SkillInterval:1300
 };
 const SENTENCES=[
-  "遗忘在空间蔓延",
-  "感到孤独",
-  "它无处可去",
-  "他她它祂祂",
-  "为什么"
+  "遗忘 遺忘在 空間 蔓 延在空间 蔓延",
+  "感到孤獨 感到 孤独",
+  "它祂 她 他无处可逃 無處 可去",
+  "他 她它 祂祂",
+  "救救我救救我救救我救救我救救我救救我救救我救救我救救我救救我救救我救救我救救我救救我救救我救救我救救我救救我"
 ];
 const TRACK_CHARS = ["寂","忘","空","虚","失","沉"];
 const state={
