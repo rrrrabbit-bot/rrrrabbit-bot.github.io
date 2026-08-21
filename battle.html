@@ -45,15 +45,15 @@ html,body{
   transform:translate(-50%,-50%);
 }
 .sprite.eye{
-  width:120px;
+  width:60px;
   height:auto;
 }
 .sprite.mouth{
-  width:120px;
+  width:60px;
   height:auto;
 }
 .sprite.hand{
-  width:100px;
+  width:80px;
   height:auto;
 }
 /* 右手镜像外层容器，只做视觉翻转，不改变子元素定位基准 */
@@ -134,6 +134,7 @@ function parseB64Vars(b64str){
 const urlParams=new URLSearchParams(location.search);
 let vnVars=parseB64Vars(urlParams.get("vn_vars")||"");
 const returnUnitId=urlParams.get("returnUnitId");
+
 // 战斗配置
 const CONFIG={
   maxHP:100,
@@ -143,8 +144,8 @@ const CONFIG={
   ringDmg:3,
   wordDmg:6,
   singleWordDmg:4,
-  handSlapDmg:12,
-  handSpeed:1.2,
+  handSlapDmg:18,     //二阶段手拍伤害提高
+  handSpeed:1.6,      //一阶段手移动更快，压缩空间更明显
   floatAmp:6,
   ringCountPerBurst:10,
   ringInterval:1800,
@@ -156,7 +157,7 @@ const CONFIG={
   orbEaseFactor:0.065,
   orbEaseMin:0.008,
   charJiggleMag:1.2,
-  charFlickerMin:0,
+  charFlickerMin:0.72,
   charFlickerMax:1,
   singleWordLife:6000,
   returnRingMaxDist:280,
@@ -167,16 +168,22 @@ const CONFIG={
     returnRing:50,
     handSlap:20
   },
-  phase2SkillInterval:1300
+  phase2SkillInterval:1300,
+  handRectThicknessPx:60,   //手矩形碰撞水平厚度px，竖直占满屏幕
+  handSlapRange:72,         //二阶段手拍判定范围加大
+  handSlapKnockback:90      //手拍击退距离加大
 };
+
 const SENTENCES=[
   "遗忘 遺忘在 空間 蔓 延在空间 蔓延",
   "感到孤獨 感到 孤独",
   "它祂 她 他无处可逃 無處 可去",
   "他 她它 祂祂",
-  "救救我救救我救救我救救我救救我救救我救救我救救我救救我救救我救救我救救我救救我救救我救救我救救我救救我救救我"
+  "救救我 救救 我救救 我救",
+  "谁也没有来"
 ];
 const TRACK_CHARS = ["寂","忘","空","虚","失","沉"];
+
 const state={
   hp:CONFIG.maxHP,
   running:false,
@@ -196,6 +203,7 @@ const state={
   eyeW:60,eyeH:60,
   handW:80,handH:80
 };
+
 const stage=document.getElementById("stage");
 const orb=document.getElementById("orb");
 const hpWrap=document.getElementById("hpWrap");
@@ -271,7 +279,7 @@ function initSprites(){
   handLeftGif.classList.add("hand");
   stage.appendChild(handLeftGif);
 
-  // 右手：外层mirror-wrap做镜像翻转，图片本身保持普通sprite
+  // 右手：外层mirror‑wrap做镜像翻转，图片本身保持普通sprite
   handRightWrap=document.createElement("div");
   handRightWrap.className="mirror-wrap";
   handRightGif=makeSprite("./units/demo01/HAND.png");
@@ -280,7 +288,7 @@ function initSprites(){
   stage.appendChild(handRightWrap);
 }
 
-// 弹幕类，使用隐藏容器测量文字尺寸
+// 弹幕类
 class Bullet{
   constructor(x,y,vx,vy,isWord=false,word="",isTrackChar=false,isReturnRing=false){
     this.x=x;this.y=y;this.vx=vx;this.vy=vy;
@@ -442,21 +450,21 @@ function fireReturnRingBurst(){
     },i*90);
   }
 }
-//手拍冲击
+//手拍冲击【强化二阶段拍击】
 function triggerHandSlap(){
   if(state.handSlapCooldown>0) return;
   state.handSlapCooldown=1200;
   const useLeft=Math.random()>0.5;
   const hx=useLeft ? state.leftHandX : state.rightHandX;
   const hy=useLeft ? state.leftHandY : state.rightHandY;
-  const hitRange=Math.max(state.handW,state.handH)*0.45;
+  const hitRange=CONFIG.handSlapRange;
   if(dist(hx,hy,state.orbX,state.orbY)<hitRange){
     damage(CONFIG.handSlapDmg);
     const ang=Math.atan2(state.orbY-hy,state.orbX-hx);
-    state.orbX+=Math.cos(ang)*60;
-    state.orbY+=Math.sin(ang)*60;
+    state.orbX+=Math.cos(ang)*CONFIG.handSlapKnockback;
+    state.orbY+=Math.sin(ang)*CONFIG.handSlapKnockback;
     stage.classList.add("shake-screen");
-    setTimeout(()=>stage.classList.remove("shake-screen"),180);
+    setTimeout(()=>stage.classList.remove("shake-screen"),260);
   }
 }
 
@@ -570,17 +578,17 @@ function gameLoop(ts){
 
   if(state.handSlapCooldown>0) state.handSlapCooldown-=16;
 
-  // 手阻挡碰撞：使用贴图设置尺寸
-  const handBlockR=Math.max(state.handW,state.handH)*0.44;
-  if(dist(state.orbX,state.orbY,state.leftHandX,state.leftHandY)<handBlockR){
-    const a=Math.atan2(state.orbY-state.leftHandY,state.orbX-state.leftHandX);
-    state.orbX=state.leftHandX+Math.cos(a)*handBlockR;
-    state.orbY=state.leftHandY+Math.sin(a)*handBlockR;
+  // =========【手改为竖直全屏矩形碰撞】=========
+  const handThick=CONFIG.handRectThicknessPx;
+  //左手：矩形在 leftHandX 的右侧
+  const leftHandEdge=state.leftHandX;
+  if(state.orbX < leftHandEdge && state.orbX > leftHandEdge-handThick){
+    state.orbX=leftHandEdge;
   }
-  if(dist(state.orbX,state.orbY,state.rightHandX,state.rightHandY)<handBlockR){
-    const a=Math.atan2(state.orbY-state.rightHandY,state.orbX-state.rightHandX);
-    state.orbX=state.rightHandX+Math.cos(a)*handBlockR;
-    state.orbY=state.rightHandY+Math.sin(a)*handBlockR;
+  //右手：矩形在 rightHandX 的左侧
+  const rightHandEdge=state.rightHandX;
+  if(state.orbX > rightHandEdge && state.orbX < rightHandEdge+handThick){
+    state.orbX=rightHandEdge;
   }
 
   orb.style.left=state.orbX+"px";
@@ -614,7 +622,6 @@ function gameLoop(ts){
 
   handLeftGif.style.left=state.leftHandX+"px";
   handLeftGif.style.top=(state.leftHandY+handLOff)+"px";
-  // 右手修改：设置外层容器的left/top，图片本身sprite保持translate(-50%,‑50%)
   handRightWrap.style.left=state.rightHandX+"px";
   handRightWrap.style.top=(state.rightHandY+handROff)+"px";
 
@@ -638,8 +645,8 @@ function gameLoop(ts){
     }
   });
 
-  // 眼球本体碰撞
-  const eyeHitR=Math.max(state.eyeW,state.eyeH)*0.42;
+  // =========眼睛碰撞箱放大，系数0.58=========
+  const eyeHitR=Math.max(state.eyeW,state.eyeH)*0.58;
   if(dist(state.orbX,state.orbY,state.eyeX,state.eyeY)<eyeHitR){
     damage(CONFIG.orbHitEyeDmg);
     const ang=Math.atan2(state.orbY-state.eyeY,state.orbX-state.eyeX);
@@ -681,7 +688,6 @@ function gameLoop(ts){
   }
 
   state.charJiggleTimer += 16;
-  //【修复】只在#stage容器内部查询，不再全局document.querySelectorAll，不会污染title
   if(state.charJiggleTimer >= 80){
     state.charJiggleTimer = 0;
     stage.querySelectorAll(".pixel-text").forEach(el=>{
@@ -729,12 +735,10 @@ async function runIntro(){
   initSprites();
   itGif.style.left="50%";
   itGif.style.top="50%";
-  itGif.style.transform="translate(-50%,-50%)";
-  itGif.style.transition="opacity 1400ms";
   itGif.style.opacity="1";
+  itGif.style.transition="opacity 1400ms";
   await sleep(3000);
   const txtIt=document.createElement("div");
-  txtIt.className="pixel-text";
   txtIt.style.position="absolute";
   txtIt.style.left="50%";
   txtIt.style.top="calc(50% - 90px)";
@@ -768,7 +772,7 @@ async function runIntro(){
   startBattle();
 }
 
-// 自动计时器
+// 自动计时器【一阶段手移动幅度加大，压缩空间更明显】
 function startAutoTimers(){
   setInterval(()=>{
     if(!state.running||state.mouthActive)return;
@@ -785,12 +789,14 @@ function startAutoTimers(){
     mouthGif.style.opacity="1";
     fireWordBurstLoop();
   },4800);
+
   setInterval(()=>{
     if(!state.running)return;
     const moveLeft=Math.random()>0.5;
+    // 手移动范围更靠近屏幕边缘，压缩玩家横向空间
     const target=moveLeft
-      ? rand(innerWidth*0.08,innerWidth*0.32)
-      : rand(innerWidth*0.68,innerWidth*0.92);
+      ? rand(innerWidth*0.04,innerWidth*0.36)
+      : rand(innerWidth*0.64,innerWidth*0.96);
     const animate=()=>{
       const current=moveLeft?state.leftHandX:state.rightHandX;
       if(Math.abs(current-target)>2){
@@ -800,7 +806,7 @@ function startAutoTimers(){
       }
     };
     animate();
-  },3600);
+  },3200);
 }
 
 // 输入
