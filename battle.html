@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"/>
+<title>battle</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{
+  width:100%;height:100%;
+  overflow:hidden;background:#000;color:#fff;
+  font-family:monospace;
+}
+#stage{
+  width:100vw;height:100vh;
+  position:relative;
+  overflow:hidden;
+}
+
+/* 全局 middle 像素字容器 */
+.pixel-text{
+  position:absolute;
+  font-family:monospace;
+  font-size:18px;
+  line-height:1.4;
+  white-space:pre;
+  pointer-events:none;
+  transform:translate(-50%,-50%);
+}
+
+/* 每个字单独包裹，用于独立抖动 */
+.pixel-text .char{
+  display:inline-block;
+  text-shadow:
+    -1px -1px 0 #fff,
+    1px -1px 0 #fff,
+    -1px 1px 0 #fff,
+    1px 1px 0 #fff;
+  filter:drop-shadow(0 0 1px #fff);
+  will-change:transform,opacity;
+}
+
+/* 贴图通用 */
+.sprite{
+  position:absolute;
+  pointer-events:none;
+  image-rendering:pixelated;
+}
+
+/* 玩家圆球 */
+#orb{
+  width:26px;height:26px;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:0 0 8px #fff, 0 0 16px #fff;
+  position:absolute;
+  transform:translate(-50%,-50%);
+}
+#orb.shadow-dup{
+  opacity:0.35;
+  transform:translate(-46%,-46%);
+}
+
+/* 纯白色血条 */
+#hpWrap{
+  position:absolute;bottom:40px;left:50%;transform:translateX(-50%);
+  width:240px;height:18px;border:1px solid #fff;
+  display:none;
+}
+#hpBar{
+  height:100%;background:#fff;transition:width 0.12s linear;
+}
+
+/* 粒子 */
+.particle{
+  position:absolute;border-radius:50%;background:#fff;
+  pointer-events:none;
+}
+
+/* 屏幕抖动 */
+.shake-screen{
+  animation:screenShake 0.06s infinite;
+}
+@keyframes screenShake{
+  0%{transform:translate(3px,-2px)}
+  25%{transform:translate(-3px,2px)}
+  50%{transform:translate(2px,3px)}
+  75%{transform:translate(-2px,-3px)}
+  100%{transform:translate(3px,-2px)}
+}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="hpWrap">
+    <div id="hpBar"></div>
+  </div>
+  <div id="orb" style="display:none"></div>
+</div>
+
+<script>
+// =========【和VN通信编解码函数】=========
+function encodeVarsToB64(obj){
+  try{
+    const jsonStr=JSON.stringify(obj);
+    return btoa(unescape(encodeURIComponent(jsonStr)));
+  }catch(e){return "";}
+}
+function parseB64Vars(b64str){
+  try{
+    const jsonStr=decodeURIComponent(escape(atob(b64str)));
+    return JSON.parse(jsonStr);
+  }catch(e){return {};}
+}
+
+const urlParams=new URLSearchParams(location.search);
+let vnVars=parseB64Vars(urlParams.get("vn_vars")||"");
+const returnUnitId=urlParams.get("returnUnitId");
+
+// 战斗配置
+const CONFIG={
+  maxHP:100,
+  surviveSec:120,
+  phaseSwitchSec:60,
+  orbHitEyeDmg:50,
+  ringDmg:3,
+  wordDmg:6,
+  singleWordDmg:4,
+  handSlapDmg:12,
+  handSpeed:1.2,
+  floatAmp:6,
+  ringCountPerBurst:10,
+  ringInterval:1800,
+  wordBurstDur:8,
+  wordBatch:5,
+  wordBatchGap:700,
+  wordInitSpeed:3.2,
+  orbMaxSpeed:7,
+  orbEaseFactor:0.065,
+  orbEaseMin:0.008,
+  charJiggleMag:1.2,
+  charFlickerMin:0.72,
+  charFlickerMax:1,
+  singleWordLife:6000,
+  // 二阶段折返环【修复后参数】
+  returnRingMaxDist:280,    // 最大飞出距离
+  returnRingPauseMs:450,    // 飞到最远后静止多久再返回
+  returnRingInAccel:1.03,
+  //阶段2技能权重 30/50/20
+  skillWeights:{
+    trackChar:30,
+    returnRing:50,
+    handSlap:20
+  },
+  phase2SkillInterval:1300
+};
+
+const SENTENCES=[
+  "遗忘在空间蔓延",
+  "感到孤独",
+  "它无处可去",
+  "他她它祂牠",
+  "为什么"
+];
+const TRACK_CHARS = ["寂","忘","空","虚","失","沉"];
+
+const state={
+  hp:CONFIG.maxHP,
+  running:false,
+  victory:false,
+  orbX:0,orbY:0,
+  targetX:0,targetY:0,
+  eyeX:0,eyeY:0,
+  leftHandX:0,leftHandY:0,
+  rightHandX:0,rightHandY:0,
+  mouthActive:false,
+  mouthTimer:0,
+  lastSentenceTime:0,
+  gameStartTs:0,
+  lastPhase2SkillTs:0,
+  handSlapCooldown:0,
+  charJiggleTimer:0
+};
+
+const stage=document.getElementById("stage");
+const orb=document.getElementById("orb");
+const hpWrap=document.getElementById("hpWrap");
+const hpBar=document.getElementById("hpBar");
+
+function rand(min,max){return Math.random()*(max-min)+min}
+function randInt(min,max){return Math.floor(rand(min,max+1))}
+function dist(x1,y1,x2,y2){return Math.hypot(x2-x1,y2-y1)}
+function lerp(a,b,t){return a+(b-a)*t}
+function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
+
+// 构建 middle 风格文字：每个字独立 span
+function makePixelText(text,fontSize=18){
+  const wrap=document.createElement("div");
+  wrap.className="pixel-text";
+  wrap.style.fontSize=fontSize+"px";
+  for(let ch of text){
+    const span=document.createElement("span");
+    span.className="char";
+    span.textContent=ch;
+    wrap.appendChild(span);
+  }
+  return wrap;
+}
+
+// 打字机效果
+async function typeWritePixel(container,text,delay=120,fontSize=18){
+  container.innerHTML="";
+  const wrap=makePixelText(text,fontSize);
+  container.appendChild(wrap);
+  const chars=wrap.querySelectorAll(".char");
+  chars.forEach(c=>c.textContent="");
+  for(let i=0;i<text.length;i++){
+    chars[i].textContent=text[i];
+    await sleep(delay);
+  }
+  return wrap;
+}
+
+function tickCharJiggle(root){
+  root.querySelectorAll(".char").forEach(c=>{
+    const x=rand(-CONFIG.charJiggleMag,CONFIG.charJiggleMag);
+    const y=rand(-CONFIG.charJiggleMag,CONFIG.charJiggleMag);
+    const opacity=rand(CONFIG.charFlickerMin,CONFIG.charFlickerMax);
+    c.style.transform=`translate(${x}px,${y}px)`;
+    c.style.opacity=opacity;
+  });
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+// 贴图辅助
+function makeSprite(src){
+  const el=document.createElement("img");
+  el.className="sprite";
+  el.src=src;
+  el.style.opacity="0";
+  stage.appendChild(el);
+  return el;
+}
+
+let itGif, eyeGif, mouthGif, handLeftGif, handRightGif;
+function initSprites(){
+  itGif=makeSprite("./units/demo01/IT.gif");
+  eyeGif=makeSprite("./units/demo01/EYE.gif");
+  mouthGif=makeSprite("./units/demo01/MOUTH.gif");
+  handLeftGif=makeSprite("./units/demo01/HAND.gif");
+  handRightGif=makeSprite("./units/demo01/HAND.gif");
+  handRightGif.style.transform="scaleX(-1)";
+}
+
+// 【修复核心】
+class Bullet{
+  constructor(x,y,vx,vy,isWord=false,word="",isTrackChar=false,isReturnRing=false){
+    this.x=x;this.y=y;this.vx=vx;this.vy=vy;
+    this.isWord=isWord;
+    this.isTrackChar=isTrackChar;
+    this.isReturnRing=isReturnRing;
+    this.word=word;
+    this.birth=performance.now();
+
+    this.originX=x;
+    this.originY=y;
+    this.baseVX=vx;
+    this.baseVY=vy;
+
+    this.ringPhase="out"; // out向外 / pause静止 / back返回
+    this.pauseStartTs=0;
+
+    this.el=document.createElement("div");
+    this.el.style.position="absolute";
+    this.el.style.transform="translate(-50%,-50%)";
+
+    if(isWord || isTrackChar){
+      this.txtWrap=makePixelText(word,18);
+      this.el.appendChild(this.txtWrap);
+      const ang=Math.atan2(vy,vx);
+      this.el.style.transform=`translate(-50%,-50%) rotate(${ang}rad)`;
+      stage.appendChild(this.el);
+      const rect=this.el.getBoundingClientRect();
+      this.colW=rect.width*0.7;
+      this.colH=rect.height*0.7;
+      stage.removeChild(this.el);
+    }else{
+      this.el.style.width="24px";
+      this.el.style.height="24px";
+      this.el.style.border="2px solid #fff";
+      this.el.style.borderRadius="50%";
+      this.colW=16;
+      this.colH=16;
+    }
+    stage.appendChild(this.el);
+    this.alive=true;
+  }
+
+  update(orbX,orbY,eyeX,eyeY){
+    if(!this.alive)return;
+    const now=performance.now();
+
+    if(this.isTrackChar && now - this.birth > CONFIG.singleWordLife){
+      this.destroy();
+      return;
+    }
+
+    // ========== 修复折返圆环逻辑 ==========
+    if(this.isReturnRing){
+      const flyDist = dist(this.x,this.y,this.originX,this.originY);
+      switch(this.ringPhase){
+        case "out":
+          // 向外阶段：不再逐帧疯狂减速，匀速向外直达最大距离
+          this.x += this.vx;
+          this.y += this.vy;
+          if(flyDist >= CONFIG.returnRingMaxDist){
+            this.ringPhase="pause";
+            this.pauseStartTs = now;
+            this.vx=0;
+            this.vy=0;
+          }
+          break;
+        case "pause":
+          // 静止等待固定时间
+          if(now - this.pauseStartTs >= CONFIG.returnRingPauseMs){
+            this.ringPhase="back";
+            // ✅ 原路返回：直接使用【原始发射方向反向】
+            this.vx = -this.baseVX;
+            this.vy = -this.baseVY;
+          }
+          break;
+        case "back":
+          // 返回途中逐步加速，原路回眼睛
+          this.vx *= CONFIG.returnRingInAccel;
+          this.vy *= CONFIG.returnRingInAccel;
+          this.x += this.vx;
+          this.y += this.vy;
+          // 回到眼球附近销毁
+          if(dist(this.x,this.y,eyeX,eyeY) < 36){
+            this.destroy();
+            return;
+          }
+          break;
+      }
+    }else{
+      // 普通弹幕、追踪字弹正常移动
+      if(this.isTrackChar){
+        const ang=Math.atan2(orbY-this.y,orbX-this.x);
+        const spd=1.4;
+        this.vx=Math.cos(ang)*spd;
+        this.vy=Math.sin(ang)*spd;
+      }
+      this.x+=this.vx;
+      this.y+=this.vy;
+    }
+
+    // 边界剔除
+    if(this.x<0||this.x>innerWidth||this.y<0||this.y>innerHeight){
+      this.destroy();
+      return;
+    }
+
+    this.el.style.left=this.x+"px";
+    this.el.style.top=this.y+"px";
+
+    if(this.isWord || this.isTrackChar){
+      tickCharJiggle(this.txtWrap);
+    }
+  }
+
+  hitTest(targetX,targetY,targetR){
+    const halfW=this.colW/2;
+    const halfH=this.colH/2;
+    return !(
+      targetX+targetR < this.x-halfW ||
+      targetX-targetR > this.x+halfW ||
+      targetY+targetR < this.y-halfH ||
+      targetY-targetR > this.y+halfH
+    );
+  }
+
+  destroy(){
+    this.alive=false;
+    this.el.remove();
+  }
+}
+
+let bullets=[];
+
+// 嘴巴文字弹幕（仅0-60s）
+async function fireWordBurstLoop(){
+  const cx=state.eyeX,cy=state.eyeY;
+  const words=["死亡","遗忘","怨恨","孤独","欺骗"];
+  while(state.running && state.mouthActive){
+    const elapsed=(performance.now()-state.gameStartTs)/1000;
+    if(elapsed >= CONFIG.phaseSwitchSec) break;
+    for(let i=0;i<CONFIG.wordBatch;i++){
+      const ang=Math.atan2(state.orbY-cy,state.orbX-cx)+rand(-0.35,0.35);
+      const spd=CONFIG.wordInitSpeed;
+      const w=words[randInt(0,words.length-1)];
+      bullets.push(new Bullet(cx,cy,Math.cos(ang)*spd,Math.sin(ang)*spd,true,w));
+      await sleep(80);
+    }
+    await sleep(CONFIG.wordBatchGap);
+  }
+}
+
+// 阶段2 权重随机选技能
+function pickPhase2Skill(){
+  const r=randInt(1,100);
+  if(r<=CONFIG.skillWeights.trackChar) return "trackChar";
+  if(r<=CONFIG.skillWeights.trackChar+CONFIG.skillWeights.returnRing) return "returnRing";
+  return "handSlap";
+}
+
+//发射追踪单字弹
+function fireTrackChar(){
+  const cx=state.eyeX,cy=state.eyeY;
+  const char=TRACK_CHARS[randInt(0,TRACK_CHARS.length-1)];
+  const ang=rand(0,Math.PI*2);
+  const spd=1.2;
+  bullets.push(new Bullet(cx,cy,Math.cos(ang)*spd,Math.sin(ang)*spd,false,char,true,false));
+}
+
+//发射记忆折返环
+function fireReturnRingBurst(){
+  const cx=state.eyeX,cy=state.eyeY;
+  const count=6;
+  for(let i=0;i<count;i++){
+    setTimeout(()=>{
+      const ang=Math.atan2(state.orbY-cy,state.orbX-cx)+rand(-0.25,0.25);
+      const spd=3.2;
+      bullets.push(new Bullet(cx,cy,Math.cos(ang)*spd,Math.sin(ang)*spd,false,"",false,true));
+    },i*90);
+  }
+}
+
+//手拍冲击
+function triggerHandSlap(){
+  if(state.handSlapCooldown>0) return;
+  state.handSlapCooldown=1200;
+  const useLeft=Math.random()>0.5;
+  const handX=useLeft ? state.leftHandX : state.rightHandX;
+  const handY=useLeft ? state.leftHandY : state.rightHandY;
+  const hitRange=52;
+  if(dist(handX,handY,state.orbX,state.orbY)<hitRange){
+    damage(CONFIG.handSlapDmg);
+    const ang=Math.atan2(state.orbY-handY,state.orbX-handX);
+    state.orbX+=Math.cos(ang)*60;
+    state.orbY+=Math.sin(ang)*60;
+    stage.classList.add("shake-screen");
+    setTimeout(()=>stage.classList.remove("shake-screen"),180);
+  }
+}
+
+// 圆球爆炸粒子
+function spawnExplode(x,y,count=30){
+  for(let i=0;i<count;i++){
+    const p=document.createElement("div");
+    p.className="particle";
+    const size=rand(3,8);
+    p.style.width=size+"px";
+    p.style.height=size+"px";
+    p.style.left=x+"px";
+    p.style.top=y+"px";
+    const ang=rand(0,Math.PI*2);
+    const spd=rand(2,6);
+    const vx=Math.cos(ang)*spd;
+    const vy=Math.sin(ang)*spd;
+    stage.appendChild(p);
+
+    let t=0;
+    function step(){
+      t+=1;
+      p.style.left=parseFloat(p.style.left)+vx+"px";
+      p.style.top=parseFloat(p.style.top)+vy+"px";
+      p.style.opacity=1-t/40;
+      if(t<40)requestAnimationFrame(step);
+      else p.remove();
+    }
+    requestAnimationFrame(step);
+  }
+}
+
+function updateHPUI(){
+  const pct=state.hp/CONFIG.maxHP*100;
+  hpBar.style.width=pct+"%";
+}
+
+function damage(amt){
+  state.hp=Math.max(0,state.hp-amt);
+  updateHPUI();
+  if(state.hp<=0)gameOver(false);
+}
+
+// 胜利/失败收尾
+async function gameOver(isWin){
+  state.running=false;
+  orb.style.display="none";
+  hpWrap.style.display="none";
+  bullets.forEach(b=>b.destroy());
+  bullets=[];
+
+  if(!isWin){
+    spawnExplode(state.orbX,state.orbY);
+    await sleep(1200);
+    startBattle();
+    return;
+  }
+
+  stage.style.transition="filter 2500ms";
+  stage.style.filter="brightness(10)";
+  await sleep(800);
+
+  const fillCount=45;
+  for(let i=0;i<fillCount;i++){
+    const t=document.createElement("div");
+    t.style.position="absolute";
+    t.style.left=rand(60,innerWidth-60)+"px";
+    t.style.top=rand(60,innerHeight-60)+"px";
+    t.style.transform="translate(-50%,-50%)";
+    stage.appendChild(t);
+    await typeWritePixel(t,SENTENCES[randInt(0,SENTENCES.length-1)],70,20);
+    await sleep(60);
+  }
+
+  await sleep(2200);
+
+  if(!returnUnitId)alert("缺少returnUnitId，无法返回");
+  else{
+    const backUrl=`./index.html?return_unit=${encodeURIComponent(returnUnitId)}&return_page=end01&return_vars=${encodeURIComponent(encodeVarsToB64(vnVars))}`;
+    location.href=backUrl;
+  }
+}
+
+// 原版眼圆环弹幕（仅0-60s）
+function fireRingBurst(){
+  const elapsed=(performance.now()-state.gameStartTs)/1000;
+  if(elapsed >= CONFIG.phaseSwitchSec) return;
+  const cx=state.eyeX,cy=state.eyeY;
+  for(let i=0;i<CONFIG.ringCountPerBurst;i++){
+    setTimeout(()=>{
+      const ang=Math.atan2(state.orbY-cy,state.orbX-cx)+rand(-0.22,0.22);
+      const spd=3.2;
+      bullets.push(new Bullet(cx,cy,Math.cos(ang)*spd,Math.sin(ang)*spd,false));
+    },i*90);
+  }
+}
+
+// 主游戏循环
+function gameLoop(ts){
+  if(!state.running)return;
+  requestAnimationFrame(gameLoop);
+
+  const elapsed=(ts-state.gameStartTs)/1000;
+  if(elapsed>=CONFIG.surviveSec){
+    gameOver(true);
+    return;
+  }
+
+  // 圆球缓动：离目标越近越慢
+  const dx=state.targetX-state.orbX;
+  const dy=state.targetY-state.orbY;
+  const distance=Math.hypot(dx,dy);
+
+  const t=clamp(
+    CONFIG.orbEaseFactor + (1 - distance / Math.max(innerWidth,innerHeight)) * 0.08,
+    CONFIG.orbEaseMin,
+    0.18
+  );
+
+  state.orbX=lerp(state.orbX,state.targetX,t);
+  state.orbY=lerp(state.orbY,state.targetY,t);
+
+  //手拍冷却倒计时
+  if(state.handSlapCooldown>0) state.handSlapCooldown-=16;
+
+  // 手阻挡
+  const handBlockR=44;
+  if(dist(state.orbX,state.orbY,state.leftHandX,state.leftHandY)<handBlockR){
+    const a=Math.atan2(state.orbY-state.leftHandY,state.orbX-state.leftHandX);
+    state.orbX=state.leftHandX+Math.cos(a)*handBlockR;
+    state.orbY=state.leftHandY+Math.sin(a)*handBlockR;
+  }
+  if(dist(state.orbX,state.orbY,state.rightHandX,state.rightHandY)<handBlockR){
+    const a=Math.atan2(state.orbY-state.rightHandY,state.orbX-state.rightHandX);
+    state.orbX=state.rightHandX+Math.cos(a)*handBlockR;
+    state.orbY=state.rightHandY+Math.sin(a)*handBlockR;
+  }
+
+  orb.style.left=state.orbX+"px";
+  orb.style.top=state.orbY+"px";
+
+  let dup=orb.querySelector(".shadow-dup");
+  if(!dup){
+    dup=document.createElement("div");
+    dup.className="shadow-dup";
+    orb.appendChild(dup);
+  }
+  dup.style.left=state.orbX+"px";
+  dup.style.top=state.orbY+"px";
+
+  // 上下浮动：眼/嘴/手
+  const floatT=ts/1000;
+  const eyeOff=Math.sin(floatT*2.1)*CONFIG.floatAmp;
+  const handLOff=Math.sin(floatT*1.7)*CONFIG.floatAmp;
+  const handROff=Math.sin(floatT*2.4)*CONFIG.floatAmp;
+  const baseEyeY=innerHeight*0.24;
+
+  state.eyeX=innerWidth/2;
+  state.eyeY=baseEyeY+eyeOff;
+  eyeGif.style.left=state.eyeX+"px";
+  eyeGif.style.top=state.eyeY+"px";
+  mouthGif.style.left=state.eyeX+"px";
+  mouthGif.style.top=state.eyeY+"px";
+
+  const handBaseY=innerHeight*0.58;
+  handLeftGif.style.left=state.leftHandX+"px";
+  handLeftGif.style.top=(state.leftHandY+handLOff)+"px";
+  handRightGif.style.left=state.rightHandX+"px";
+  handRightGif.style.top=(state.rightHandY+handROff)+"px";
+
+  // 嘴巴计时（仅0-60s生效）
+  if(state.mouthActive){
+    state.mouthTimer-=16;
+    if(state.mouthTimer<=0){
+      state.mouthActive=false;
+      mouthGif.style.opacity="0";
+      eyeGif.style.opacity="1";
+    }
+  }
+
+  //碰撞
+  bullets.forEach(b=>{
+    if(!b.alive)return;
+    b.update(state.orbX,state.orbY,state.eyeX,state.eyeY);
+    if(b.hitTest(state.orbX,state.orbY,13)){
+      if(b.isTrackChar) damage(CONFIG.singleWordDmg);
+      else damage(b.isWord?CONFIG.wordDmg:CONFIG.ringDmg);
+      b.destroy();
+    }
+  });
+
+  if(dist(state.orbX,state.orbY,state.eyeX,state.eyeY)<46){
+    damage(CONFIG.orbHitEyeDmg);
+    const ang=Math.atan2(state.orbY-state.eyeY,state.orbX-state.eyeX);
+    state.orbX+=Math.cos(ang)*70;
+    state.orbY+=Math.sin(ang)*70;
+  }
+
+  bullets=bullets.filter(b=>b.alive);
+
+  //阶段2定时随机释放技能
+  if(elapsed >= CONFIG.phaseSwitchSec){
+    if(ts-state.lastPhase2SkillTs>CONFIG.phase2SkillInterval){
+      state.lastPhase2SkillTs=ts;
+      const skill=pickPhase2Skill();
+      if(skill==="trackChar") fireTrackChar();
+      else if(skill==="returnRing") fireReturnRingBurst();
+      else if(skill==="handSlap") triggerHandSlap();
+    }
+  }
+
+  // 顶部随机句子
+  if(ts-state.lastSentenceTime>rand(3000,5000)){
+    state.lastSentenceTime=ts;
+    const sent=SENTENCES[randInt(0,SENTENCES.length-1)];
+    const tEl=document.createElement("div");
+    tEl.className="top-sentence";
+    tEl.style.position="absolute";
+    tEl.style.left="50%";
+    tEl.style.top="70px";
+    tEl.style.transform="translate(-50%,-50%)";
+    stage.appendChild(tEl);
+
+    typeWritePixel(tEl,sent,110).then(()=>{
+      setTimeout(()=>{
+        tEl.style.transition="opacity 700ms";
+        tEl.style.opacity="0";
+        setTimeout(()=>tEl.remove(),700);
+      },2200);
+    });
+  }
+
+  // 文字抖动节流
+  state.charJiggleTimer += 16;
+  if(state.charJiggleTimer >= 80){
+    state.charJiggleTimer = 0;
+    document.querySelectorAll(".pixel-text").forEach(el=>{
+      tickCharJiggle(el);
+    });
+  }
+}
+
+// 开始战斗
+function startBattle(){
+  state.hp=CONFIG.maxHP;
+  state.mouthActive=false;
+  state.running=false;
+  bullets.forEach(b=>b.destroy());
+  bullets=[];
+
+  hpWrap.style.display="none";
+  orb.style.display="none";
+  eyeGif.style.opacity="1";
+  mouthGif.style.opacity="0";
+
+  state.orbX=innerWidth/2;
+  state.orbY=innerHeight*0.72;
+  state.targetX=state.orbX;
+  state.targetY=state.orbY;
+
+  state.leftHandX=innerWidth*0.14;
+  state.rightHandX=innerWidth*0.86;
+  state.leftHandY=innerHeight*0.58;
+  state.rightHandY=innerHeight*0.58;
+
+  orb.style.left=state.orbX+"px";
+  orb.style.top=state.orbY+"px";
+  orb.style.display="block";
+  hpWrap.style.display="block";
+  updateHPUI();
+
+  state.running=true;
+  state.gameStartTs=performance.now();
+  state.lastPhase2SkillTs=0;
+  state.handSlapCooldown=0;
+  state.charJiggleTimer=0;
+  requestAnimationFrame(gameLoop);
+}
+
+// 开场动画
+async function runIntro(){
+  initSprites();
+
+  itGif.style.left="50%";
+  itGif.style.top="50%";
+  itGif.style.transform="translate(-50%,-50%)";
+  itGif.style.transition="opacity 1400ms";
+  itGif.style.opacity="1";
+  await sleep(3000);
+
+  const txtIt=document.createElement("div");
+  txtIt.style.position="absolute";
+  txtIt.style.left="50%";
+  txtIt.style.top="calc(50% - 90px)";
+  txtIt.style.transform="translate(-50%,-50%)";
+  stage.appendChild(txtIt);
+
+  await typeWritePixel(txtIt,"它。",140);
+  await sleep(3000);
+
+  stage.classList.add("shake-screen");
+  itGif.style.transition="opacity 1200ms";
+  itGif.style.opacity="0";
+  txtIt.style.transition="opacity 1200ms";
+  txtIt.style.opacity="0";
+  await sleep(1600);
+
+  stage.classList.remove("shake-screen");
+  txtIt.remove();
+  itGif.remove();
+  await sleep(1000);
+
+  eyeGif.style.left="50%";
+  eyeGif.style.top=innerHeight*0.24;
+  eyeGif.style.transition="opacity 1200ms";
+  eyeGif.style.opacity="1";
+
+  handLeftGif.style.left=innerWidth*0.14;
+  handLeftGif.style.top=innerHeight*0.58;
+  handRightGif.style.left=innerWidth*0.86;
+  handRightGif.style.top=innerHeight*0.58;
+  handLeftGif.style.transition="opacity 1200ms";
+  handLeftGif.style.opacity="1";
+  handRightGif.style.transition="opacity 1200ms";
+  handRightGif.style.opacity="1";
+
+  await sleep(800);
+  startBattle();
+}
+
+// 自动计时器
+function startAutoTimers(){
+  setInterval(()=>{
+    if(!state.running||state.mouthActive)return;
+    fireRingBurst();
+  },CONFIG.ringInterval);
+
+  setInterval(()=>{
+    if(!state.running||state.mouthActive)return;
+    const elapsed=(performance.now()-state.gameStartTs)/1000;
+    if(elapsed >= CONFIG.phaseSwitchSec) return;
+    if(Math.random()>0.72)return;
+    state.mouthActive=true;
+    state.mouthTimer=CONFIG.wordBurstDur*1000;
+    eyeGif.style.opacity="0";
+    mouthGif.style.opacity="1";
+    fireWordBurstLoop();
+  },4800);
+
+  setInterval(()=>{
+    if(!state.running)return;
+    const moveLeft=Math.random()>0.5;
+    const target=moveLeft
+      ? rand(innerWidth*0.08,innerWidth*0.32)
+      : rand(innerWidth*0.68,innerWidth*0.92);
+    const animate=()=>{
+      const current=moveLeft?state.leftHandX:state.rightHandX;
+      if(Math.abs(current-target)>2){
+        if(moveLeft)state.leftHandX=lerp(state.leftHandX,target,0.025);
+        else state.rightHandX=lerp(state.rightHandX,target,0.025);
+        requestAnimationFrame(animate);
+      }
+    };
+    animate();
+  },3600);
+}
+
+// 输入
+stage.addEventListener("pointerdown",e=>{
+  if(!state.running)return;
+  const rect=stage.getBoundingClientRect();
+  state.targetX=e.clientX-rect.left;
+  state.targetY=e.clientY-rect.top;
+});
+
+stage.addEventListener("pointermove",e=>{
+  if(!state.running||!e.buttons)return;
+  const rect=stage.getBoundingClientRect();
+  state.targetX=e.clientX-rect.left;
+  state.targetY=e.clientY-rect.top;
+});
+
+runIntro();
+startAutoTimers();
+</script>
+</body>
+</html>
