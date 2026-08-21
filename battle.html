@@ -64,7 +64,7 @@ html,body{
 /* 纯白色血条 */
 #hpWrap{
   position:absolute;bottom:40px;left:50%;transform:translateX(-50%);
-  width:240px;height:18px;border:1px solid #fff;
+  width:240px;height:10px;border:1px solid #fff;
   display:none;
 }
 #hpBar{
@@ -156,11 +156,11 @@ const CONFIG={
 };
 
 const SENTENCES=[
-  "遗忘在空间蔓延",
-  "感到孤独",
-  "它无处可去",
-  "他她它祂牠",
-  "为什么"
+  "遗 忘 遺忘 在 空時 間 间 蔓 延",
+  "感 到 孤独孤獨",
+  "它无处 無處 何處不在 可 逃 可去",
+  "他 她 它 塌 祂 牠",
+  "为 為什 麼 什么"
 ];
 const TRACK_CHARS = ["寂","忘","空","虚","失","沉"];
 
@@ -245,11 +245,11 @@ function makeSprite(src){
 
 let itGif, eyeGif, mouthGif, handLeftGif, handRightGif;
 function initSprites(){
-  itGif=makeSprite("./units/demo01/IT.gif");
-  eyeGif=makeSprite("./units/demo01/EYE.gif");
-  mouthGif=makeSprite("./units/demo01/MOUTH.gif");
-  handLeftGif=makeSprite("./units/demo01/HAND.gif");
-  handRightGif=makeSprite("./units/demo01/HAND.gif");
+  itGif=makeSprite("./units/demo01/IT.png");
+  eyeGif=makeSprite("./units/demo01/EYE.png");
+  mouthGif=makeSprite("./units/demo01/MOUTH.png");
+  handLeftGif=makeSprite("./units/demo01/HAND.png");
+  handRightGif=makeSprite("./units/demo01/HAND.png");
   handRightGif.style.transform="scaleX(-1)";
 }
 
