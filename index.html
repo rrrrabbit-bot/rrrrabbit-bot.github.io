@@ -110,6 +110,23 @@ let currentUnitId=null;
 let IMG_ALIAS={};
 let IMG_FALLBACK="";
 let PAGES=[];
+
+// ============【新增：外部网页跳转变量编码工具】============
+/** 将对象转为base64字符串，用于url传递 */
+function encodeVarsToB64(obj){
+    try{
+        const jsonStr=JSON.stringify(obj);
+        return btoa(unescape(encodeURIComponent(jsonStr)));
+    }catch(e){return "";}
+}
+/** 从url参数解析回变量对象 */
+function parseB64Vars(b64str){
+    try{
+        const jsonStr=decodeURIComponent(escape(atob(b64str)));
+        return JSON.parse(jsonStr);
+    }catch(e){return {};}
+}
+
 function resolveImgAlias(str){
     if(!str)return str;
     if(str==="none")return"none";
@@ -489,6 +506,13 @@ async function renderPage(pageName,startLineIdx=0){
                 initAudio();
                 ev.stopPropagation();
                 let targetPage=Array.isArray(optVal)?resolveBranch(optVal):optVal;
+                //====选项分支也支持gotoExternal====
+                const targetPageObj=getPageById(targetPage);
+                if(targetPageObj&&targetPageObj.gotoExternal){
+                    const b64=encodeVarsToB64(globalVars);
+                    window.location.href=targetPageObj.gotoExternal+(targetPageObj.gotoExternal.includes("?")?"&":"?")+"vn_vars="+b64;
+                    return;
+                }
                 if(targetPage)renderPage(targetPage,0);
             };
             optInner.appendChild(btn);
@@ -511,6 +535,16 @@ async function renderPage(pageName,startLineIdx=0){
             await renderCurrentLine(root,pageLineItems[currentPageLineIndex],root.querySelector(".dialog-name"),textDom);
             return;
         }
+
+        //============【新增逻辑：判断本页是否要跳转外部网页 gotoExternal】============
+        if(page.gotoExternal){
+            const b64=encodeVarsToB64(globalVars);
+            //拼接url参数 vn_vars=base64变量串
+            const sep=page.gotoExternal.includes("?")?"&":"?";
+            window.location.href = page.gotoExternal + sep + "vn_vars="+b64;
+            return;
+        }
+
         let nextId=null;
         if(page.nextConditional&&Array.isArray(page.nextConditional)&&page.nextConditional.length>0){
             nextId=resolveBranch(page.nextConditional);
